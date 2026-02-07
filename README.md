@@ -72,7 +72,7 @@ Use `/modes` to list all available modes, `/mode off` to exit a mode.
 
 ## Skills Library
 
-The original [Superpowers skills](https://github.com/obra/superpowers) are included and available via the skills tool:
+The original [Superpowers skills](https://github.com/obra/superpowers) are fetched automatically from GitHub and available via the skills tool:
 
 - **test-driven-development** - RED-GREEN-REFACTOR cycle
 - **systematic-debugging** - 4-phase root cause analysis
@@ -121,7 +121,7 @@ amplifier-bundle-superpowers/
 
 This bundle exists because of the outstanding work by [Jesse Vincent](https://github.com/obra) and the contributors to [Superpowers](https://github.com/obra/superpowers). The methodology, skills, and workflow patterns in this bundle originate from that project. We built this bundle to bring Superpowers support to Amplifier users because we believe it represents some of the best thinking on how to make AI-assisted software development disciplined and reliable.
 
-The original Superpowers project is included as a submodule and its skills are loaded directly - this bundle adds Amplifier-native agents, modes, and recipes on top of that foundation.
+The original Superpowers skills library is fetched directly from GitHub at runtime and cached locally - this bundle adds Amplifier-native agents, modes, and recipes on top of that foundation.
 
 Superpowers is licensed under the [MIT License](https://github.com/obra/superpowers/blob/main/LICENSE).
 
