@@ -1,0 +1,33 @@
+bundle:
+  name: superpowers-methodology-behavior
+  version: 1.0.0
+  description: |
+    TDD and subagent-driven development methodology with specialized agents.
+    
+    Provides 5 agents:
+    - implementer: TDD implementation with tests
+    - spec-reviewer: Validates against spec compliance
+    - code-quality-reviewer: Code quality and best practices
+    - brainstormer: Design refinement facilitation
+    - plan-writer: Detailed implementation plans
+    
+    Core principles:
+    - Design before code (brainstorm first)
+    - Test-driven development (RED-GREEN-REFACTOR)
+    - Subagent-driven development (fresh agent per task)
+    - Two-stage review (spec compliance, then quality)
+    - Verification before completion
+    
+    Compose onto your bundle for the Superpowers methodology.
+
+agents:
+  include:
+    - superpowers:implementer
+    - superpowers:spec-reviewer
+    - superpowers:code-quality-reviewer
+    - superpowers:brainstormer
+    - superpowers:plan-writer
+
+context:
+  include:
+    - superpowers:context/superpowers-methodology.md

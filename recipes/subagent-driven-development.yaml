@@ -1,0 +1,181 @@
+name: "subagent-driven-development"
+description: "Execute implementation plan with fresh agent per task and two-stage review (spec compliance, then code quality)"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["implementation", "tdd", "review", "workflow"]
+
+# This recipe implements the core Superpowers execution workflow:
+# 1. Parse the implementation plan to extract tasks
+# 2. For each task:
+#    a. Implementer agent implements following TDD
+#    b. Spec reviewer validates against spec
+#    c. Code quality reviewer checks quality
+# 3. Final review of entire implementation
+#
+# Usage:
+#   amplifier run "execute subagent-driven-development.yaml with plan_path=docs/plans/2024-01-15-auth-feature.md"
+#
+# Required: A plan document created by the plan-writer agent
+
+context:
+  plan_path: ""          # Required: path to implementation plan
+  current_task: 1        # Starting task number
+  worktree_branch: ""    # Optional: branch name if using worktree
+
+steps:
+  # Step 1: Parse the plan and extract tasks
+  - id: "parse-plan"
+    agent: "foundation:explorer"
+    prompt: |
+      Read the implementation plan at: {{plan_path}}
+      
+      Extract and return:
+      1. The total number of tasks
+      2. For each task:
+         - Task number
+         - Task name
+         - Full task specification (all steps, files, code)
+      
+      Format as structured output that can be iterated over.
+    output: "plan_tasks"
+    timeout: 120
+
+  # Step 2: Execute each task with implementer
+  - id: "implement-task"
+    agent: "superpowers:implementer"
+    prompt: |
+      ## Implementation Task
+      
+      **Plan:** {{plan_path}}
+      **Task:** {{current_task}}
+      
+      Here is the full task specification:
+      
+      {{plan_tasks}}
+      
+      ---
+      
+      Implement this task following strict TDD:
+      1. Write the failing test
+      2. Verify it fails for the right reason
+      3. Write minimal code to pass
+      4. Verify all tests pass
+      5. Commit with clear message
+      6. Self-review before signaling completion
+      
+      If you have questions about the spec, ask them BEFORE implementing.
+    output: "implementation_result"
+    timeout: 600
+
+  # Step 3: Spec compliance review
+  - id: "spec-review"
+    agent: "superpowers:spec-reviewer"
+    prompt: |
+      ## Spec Compliance Review
+      
+      **Original Task Spec:**
+      {{plan_tasks}}
+      
+      **Implementation Result:**
+      {{implementation_result}}
+      
+      ---
+      
+      Review this implementation for SPEC COMPLIANCE ONLY:
+      - Is every requirement implemented?
+      - Is there anything extra not in spec?
+      - Does behavior match spec exactly?
+      
+      Return verdict: APPROVED or NEEDS CHANGES
+      If NEEDS CHANGES, list specific issues.
+    output: "spec_review_result"
+    timeout: 300
+
+  # Step 4: Handle spec review failures (conditional)
+  - id: "fix-spec-issues"
+    condition: "{{spec_review_result.verdict}} == 'NEEDS CHANGES'"
+    agent: "superpowers:implementer"
+    prompt: |
+      ## Fix Spec Compliance Issues
+      
+      The spec reviewer found these issues:
+      {{spec_review_result}}
+      
+      Fix ONLY these specific issues. Do not make other changes.
+      Then self-review and signal completion.
+    output: "spec_fix_result"
+    timeout: 300
+
+  # Step 5: Code quality review (only after spec compliance)
+  - id: "quality-review"
+    agent: "superpowers:code-quality-reviewer"
+    prompt: |
+      ## Code Quality Review
+      
+      **Spec compliance:** APPROVED
+      
+      **Implementation:**
+      {{implementation_result}}
+      
+      ---
+      
+      Review code quality:
+      - Code clarity and naming
+      - Error handling
+      - Test quality
+      - Design quality
+      - Security considerations
+      - Maintainability
+      
+      Return verdict: APPROVED or NEEDS CHANGES
+      Categorize issues as Critical, Important, or Suggestion.
+    output: "quality_review_result"
+    timeout: 300
+
+  # Step 6: Handle quality review failures (conditional)
+  - id: "fix-quality-issues"
+    condition: "{{quality_review_result.verdict}} == 'NEEDS CHANGES'"
+    agent: "superpowers:implementer"
+    prompt: |
+      ## Fix Code Quality Issues
+      
+      The code quality reviewer found these issues:
+      {{quality_review_result}}
+      
+      Fix the Critical and Important issues. Suggestions are optional.
+      Maintain spec compliance while fixing.
+    output: "quality_fix_result"
+    timeout: 300
+
+  # Step 7: Task completion summary
+  - id: "task-complete"
+    agent: "foundation:zen-architect"
+    mode: "REVIEW"
+    prompt: |
+      ## Task Completion Summary
+      
+      **Task:** {{current_task}} from {{plan_path}}
+      
+      **Implementation:** {{implementation_result}}
+      **Spec Review:** {{spec_review_result}}
+      **Quality Review:** {{quality_review_result}}
+      
+      Summarize:
+      1. What was implemented
+      2. Key decisions made
+      3. Any concerns for future tasks
+      4. Ready status for next task
+    output: "task_summary"
+    timeout: 120
+
+# Output structure:
+# 
+# plan_tasks: Parsed task list from plan
+# implementation_result: Implementer's output (commits, changes, self-review)
+# spec_review_result: Spec reviewer verdict and issues
+# quality_review_result: Quality reviewer verdict and issues
+# task_summary: Final summary of completed task
+#
+# Note: This recipe handles ONE task. For multiple tasks, 
+# orchestrate by calling this recipe for each task in sequence,
+# or use the foreach construct when available.
