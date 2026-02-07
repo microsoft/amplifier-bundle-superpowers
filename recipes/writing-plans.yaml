@@ -1,0 +1,296 @@
+# Writing Plans Workflow
+# Creates detailed implementation plans with bite-sized TDD tasks from design documents
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/writing-plans.yaml with design_path=docs/designs/my-feature.md"
+#
+# This recipe:
+#   1. Reads and analyzes a design document
+#   2. Breaks it down into implementable tasks
+#   3. Creates a detailed plan with TDD format
+#   4. PAUSES for human approval
+#   5. Saves the plan to docs/plans/
+#   6. Offers execution options
+#
+# Typical runtime: 5-10 minutes (excluding approval wait time)
+
+name: "writing-plans"
+description: "Create detailed implementation plans with bite-sized tasks (2-5 min each), TDD format, and human approval gate"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["planning", "implementation", "tdd", "workflow"]
+
+context:
+  design_path: ""    # Required: path to design document
+  feature_name: ""   # Optional: extracted from design if not provided
+
+stages:
+  # ============================================================================
+  # STAGE 1: Planning
+  # Analyze design and create implementation plan
+  # ============================================================================
+  - name: "planning"
+    steps:
+      - id: "load-design"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Read and analyze the design document at: {{design_path}}
+
+          Extract and provide:
+          1. **Feature Name**: A kebab-case identifier for this feature (e.g., "user-authentication", "api-rate-limiting")
+          2. **Goals**: What we're building and why
+          3. **Architecture Decisions**: Key technical choices made
+          4. **Tech Stack**: Technologies, frameworks, and tools needed
+          5. **Dependencies**: External services, libraries, or prerequisites
+          6. **Constraints**: Any limitations or requirements to consider
+
+          If a feature_name was provided ({{feature_name}}), use that. Otherwise, derive a suitable kebab-case name from the design.
+
+          Format your response as a structured summary that can be used for implementation planning.
+        output: "design_analysis"
+        timeout: 300
+
+      - id: "analyze-requirements"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Based on this design analysis:
+          {{design_analysis}}
+
+          Break down the implementation into discrete, implementable tasks.
+
+          For each task, identify:
+          - **What**: Clear description of what needs to be done
+          - **Files**: Exact file paths to create or modify
+          - **Tests**: What tests need to be written
+          - **Dependencies**: Which tasks must complete first
+          - **Complexity**: Simple (2 min), Medium (3-4 min), or Complex (5 min)
+
+          Requirements:
+          - Each task MUST be completable in 2-5 minutes
+          - If a task is larger, break it into smaller sub-tasks
+          - Group related tasks logically
+          - Order tasks by dependency (what must come first)
+          - Identify the critical path
+
+          Provide a structured task breakdown that follows TDD principles:
+          write test -> verify fail -> implement -> verify pass -> commit
+        output: "task_breakdown"
+        timeout: 300
+
+      - id: "create-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Create a comprehensive implementation plan based on:
+
+          Design Analysis:
+          {{design_analysis}}
+
+          Task Breakdown:
+          {{task_breakdown}}
+
+          Generate a plan in this EXACT format:
+
+          ---
+          # Implementation Plan: [Feature Name]
+
+          **Date**: [Today's date in YYYY-MM-DD format]
+          **Design Source**: {{design_path}}
+
+          ## Overview
+
+          ### Goal
+          [Clear 1-2 sentence statement of what we're building]
+
+          ### Architecture
+          [Key architectural decisions and patterns being used]
+
+          ### Tech Stack
+          [List of technologies, frameworks, libraries]
+
+          ### Prerequisites
+          [Any setup or dependencies needed before starting]
+
+          ---
+
+          ## Tasks
+
+          ### Task 1: [Task Name]
+
+          **Objective**: [What this task accomplishes]
+          **Time**: [2-5] minutes
+          **Files**: 
+          - `path/to/file.ext` (create/modify)
+
+          **Steps**:
+
+          **Step 1.1: Write test**
+          ```[language]
+          // Complete, copy-pasteable test code
+          // No placeholders or "..." - include EVERYTHING
+          ```
+
+          **Step 1.2: Verify test fails**
+          ```bash
+          [exact command to run tests]
+          ```
+          Expected: Test should fail with [specific error]
+
+          **Step 1.3: Implement**
+          ```[language]
+          // Complete, copy-pasteable implementation code
+          // No placeholders or "..." - include EVERYTHING
+          ```
+
+          **Step 1.4: Verify test passes**
+          ```bash
+          [exact command to run tests]
+          ```
+          Expected: All tests pass
+
+          **Step 1.5: Commit**
+          ```bash
+          git add [files]
+          git commit -m "[descriptive commit message]"
+          ```
+
+          ---
+
+          [Continue for all tasks...]
+
+          ---
+
+          ## Summary
+
+          - **Total Tasks**: [N]
+          - **Estimated Time**: [X-Y] minutes
+          - **Key Risks**: [Any risks or areas needing attention]
+
+          ---
+
+          CRITICAL REQUIREMENTS:
+          1. Assume the engineer has ZERO context about this codebase
+          2. Every code block must be COMPLETE and copy-pasteable
+          3. NO placeholders like "..." or "// add your code here"
+          4. Each step is ONE atomic action (2-5 minutes max)
+          5. Include exact file paths, not relative descriptions
+          6. Test commands must be exact and runnable
+          7. Commit messages should be descriptive and follow conventions
+
+          Generate the complete implementation plan now.
+        output: "implementation_plan"
+        timeout: 600
+
+    # APPROVAL GATE: Human must validate the plan before saving
+    approval:
+      required: true
+      prompt: |
+        **Implementation Plan Ready for Review**
+
+        The plan has been generated based on your design document.
+
+        Please review the implementation plan above and verify:
+        - [ ] Tasks are appropriately sized (2-5 minutes each)
+        - [ ] Code blocks are complete and copy-pasteable
+        - [ ] TDD flow is correct (test -> fail -> implement -> pass -> commit)
+        - [ ] File paths are accurate
+        - [ ] Dependencies between tasks are correct
+
+        **Approve** to save the plan and see execution options.
+        **Deny** if revisions are needed.
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 2: Finalization
+  # Save the approved plan and offer execution options
+  # ============================================================================
+  - name: "finalization"
+    steps:
+      - id: "extract-metadata"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          From this design analysis, extract the feature name:
+          {{design_analysis}}
+
+          If a feature_name was explicitly provided ({{feature_name}}), use that.
+          Otherwise, extract the kebab-case feature name from the design analysis.
+
+          Respond with ONLY the kebab-case feature name (e.g., "user-authentication").
+          No explanation, no quotes, just the name.
+        output: "extracted_feature_name"
+        timeout: 60
+
+      - id: "save-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Save the implementation plan to the filesystem.
+
+          Plan content to save:
+          {{implementation_plan}}
+
+          Instructions:
+          1. Create the directory `docs/plans/` if it doesn't exist
+          2. Save the plan to: `docs/plans/YYYY-MM-DD-{{extracted_feature_name}}-plan.md`
+             (Use today's date for YYYY-MM-DD)
+          3. Use the filesystem tools to write the file
+
+          After saving, report:
+          - The exact file path where the plan was saved
+          - Confirmation that the file was written successfully
+        output: "saved_plan_path"
+        timeout: 120
+
+      - id: "offer-execution"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          The implementation plan has been saved.
+          Plan location: {{saved_plan_path}}
+
+          Present the user with these execution options in a clear, formatted way:
+
+          ---
+
+          ## Plan Saved Successfully
+
+          Your implementation plan is ready at: `{{saved_plan_path}}`
+
+          ### Next Steps - Choose Your Execution Style
+
+          #### Option 1: Subagent-Driven Development
+          Execute with fresh agents per task and two-stage review:
+          - Fresh implementer agent per task (strict TDD)
+          - Spec compliance review after each task
+          - Code quality review after each task
+          - Human approval gate before finishing
+
+          **Best for**: Complex features, when you want thorough quality gates
+
+          **To start**:
+          ```
+          Execute superpowers:recipes/subagent-driven-development.yaml with plan_path={{saved_plan_path}}
+          ```
+
+          ---
+
+          #### Option 2: Batch Execution
+          Execute in batches with human checkpoints between each batch.
+
+          **Best for**: Large plans, when you want periodic check-ins
+
+          **To start**:
+          ```
+          Execute superpowers:recipes/executing-plans.yaml with plan_path={{saved_plan_path}}
+          ```
+
+          ---
+
+          #### Option 3: Manual Execution
+          Follow the plan yourself at your own pace. The plan has everything you need.
+
+          **Best for**: When you want full control, or prefer to work offline
+
+          ---
+
+          What would you like to do?
+        output: "execution_options"
+        timeout: 120

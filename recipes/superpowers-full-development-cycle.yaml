@@ -1,0 +1,444 @@
+# Superpowers Full Development Cycle
+# End-to-end workflow from idea to merged code
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/superpowers-full-development-cycle.yaml with feature_name='my-feature'"
+#   amplifier run "execute superpowers:recipes/superpowers-full-development-cycle.yaml with feature_name='my-feature' topic='description of feature'"
+#
+# This meta-recipe composes all Superpowers recipes:
+#   brainstorming -> writing-plans -> git-worktree-setup -> executing-plans -> finish-branch
+#
+# Approval Gates (3):
+#   1. After design - approve before planning
+#   2. After plan - approve before implementation
+#   3. After implementation - choose finish action (merge/PR/keep/discard)
+
+name: "superpowers-full-development-cycle"
+description: "Complete development workflow from idea to merged code, composing all Superpowers recipes"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["workflow", "development", "tdd", "full-cycle", "meta-recipe"]
+
+context:
+  feature_name: ""      # Required: name for branch and files (e.g., "user-authentication")
+  topic: ""             # Optional: initial idea description for brainstorming
+  project_path: "."     # Project directory (defaults to current)
+
+stages:
+  # ==========================================================================
+  # STAGE 1: Design
+  # Refine the idea into a complete design document
+  # ==========================================================================
+  - name: "design"
+    steps:
+      # Derive file paths from feature_name
+      - id: "setup-paths"
+        type: "bash"
+        command: |
+          DATE=$(date +%Y-%m-%d)
+          FEATURE_SLUG=$(echo "{{feature_name}}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
+          echo "{\"design_path\": \"docs/plans/${DATE}-${FEATURE_SLUG}-design.md\", \"plan_path\": \"docs/plans/${DATE}-${FEATURE_SLUG}-plan.md\", \"branch_name\": \"feature/${FEATURE_SLUG}\", \"feature_slug\": \"${FEATURE_SLUG}\"}"
+        parse_json: true
+        output: "paths"
+
+      # Ensure docs/plans directory exists
+      - id: "ensure-dirs"
+        type: "bash"
+        command: |
+          mkdir -p "{{project_path}}/docs/plans"
+          echo "Created docs/plans directory"
+
+      # Understand project context
+      - id: "understand-context"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Understand the project context for designing: {{feature_name}}
+          
+          Project path: {{project_path}}
+          Topic: {{topic}}
+          
+          Briefly survey:
+          1. Project structure and tech stack
+          2. Existing patterns and conventions
+          3. Any relevant existing code
+          
+          Provide a concise summary (2-3 paragraphs) to inform the design.
+        output: "project_context"
+
+      # Explore requirements through questions
+      - id: "explore-requirements"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Based on the project context:
+          {{project_context}}
+          
+          Feature: {{feature_name}}
+          Initial description: {{topic}}
+          
+          Ask 3-5 clarifying questions to fully understand:
+          - What problem does this solve?
+          - What are the key requirements?
+          - What are the constraints?
+          - What does success look like?
+          
+          Then answer them yourself based on reasonable assumptions and the project context.
+          Document both the questions and your answers.
+        output: "requirements"
+
+      # Design the solution
+      - id: "create-design"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Create a design document for: {{feature_name}}
+          
+          Requirements:
+          {{requirements}}
+          
+          Project context:
+          {{project_context}}
+          
+          Create a complete design document with:
+          1. Overview - what we're building and why
+          2. Requirements - functional and non-functional
+          3. Design - architecture, components, interfaces
+          4. Implementation approach - high-level strategy
+          5. Testing strategy - what tests are needed
+          6. Open questions - anything needing clarification
+          
+          Format as clean markdown suitable for saving to a file.
+        output: "design_content"
+
+      # Save design document
+      - id: "save-design"
+        type: "bash"
+        command: |
+          cat > "{{project_path}}/{{paths.design_path}}" << 'DESIGN_EOF'
+          {{design_content}}
+          DESIGN_EOF
+          echo "Saved design to {{paths.design_path}}"
+        output: "save_design_result"
+
+      # Present design for approval
+      - id: "present-design"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Present the design for approval.
+          
+          Design saved to: {{paths.design_path}}
+          
+          Summarize:
+          1. What we're building (1-2 sentences)
+          2. Key design decisions (bullet points)
+          3. Implementation complexity estimate
+          4. Any risks or concerns
+          
+          This summary helps the human decide whether to approve.
+        output: "design_summary"
+
+    # APPROVAL GATE 1: Approve design before planning
+    approval:
+      prompt: |
+        ## Design Review
+        
+        {{design_summary}}
+        
+        Design document: {{paths.design_path}}
+        
+        **APPROVE** to proceed to planning phase.
+        **DENY** to revise the design.
+
+  # ==========================================================================
+  # STAGE 2: Planning
+  # Create detailed implementation plan with TDD tasks
+  # ==========================================================================
+  - name: "planning"
+    steps:
+      # Read the approved design
+      - id: "load-design"
+        type: "bash"
+        command: |
+          cat "{{project_path}}/{{paths.design_path}}"
+        output: "design_doc"
+
+      # Create implementation plan
+      - id: "create-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Create a detailed implementation plan for: {{feature_name}}
+          
+          Design document:
+          {{design_doc}}
+          
+          Create a plan with bite-sized tasks. Each task should:
+          - Be completable in one focused session
+          - Have clear success criteria
+          - Follow TDD: test first, then implementation
+          - Be independently verifiable
+          
+          Format as markdown with:
+          ## Overview
+          Brief summary of what we're implementing
+          
+          ## Tasks
+          ### Task 1: [Name]
+          - [ ] Description of what to do
+          - **Test:** How to verify it works
+          - **Files:** Which files will be created/modified
+          
+          ### Task 2: [Name]
+          ...
+          
+          ## Dependencies
+          Note any task dependencies or required order
+          
+          ## Verification
+          How to verify the complete implementation works
+        output: "plan_content"
+
+      # Save plan document
+      - id: "save-plan"
+        type: "bash"
+        command: |
+          cat > "{{project_path}}/{{paths.plan_path}}" << 'PLAN_EOF'
+          {{plan_content}}
+          PLAN_EOF
+          echo "Saved plan to {{paths.plan_path}}"
+        output: "save_plan_result"
+
+      # Present plan for approval
+      - id: "present-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Present the implementation plan for approval.
+          
+          Plan saved to: {{paths.plan_path}}
+          
+          Summarize:
+          1. Total number of tasks
+          2. Estimated complexity (simple/medium/complex)
+          3. Key milestones
+          4. Any concerns about the plan
+        output: "plan_summary"
+
+    # APPROVAL GATE 2: Approve plan before implementation
+    approval:
+      prompt: |
+        ## Plan Review
+        
+        {{plan_summary}}
+        
+        Plan document: {{paths.plan_path}}
+        
+        **APPROVE** to proceed to implementation.
+        **DENY** to revise the plan.
+
+  # ==========================================================================
+  # STAGE 3: Implementation
+  # Create worktree and execute plan with TDD
+  # ==========================================================================
+  - name: "implementation"
+    steps:
+      # Create git worktree for isolated development
+      - id: "create-worktree"
+        agent: "foundation:git-ops"
+        prompt: |
+          Create a git worktree for feature development.
+          
+          Branch name: {{paths.branch_name}}
+          Project path: {{project_path}}
+          
+          Steps:
+          1. Verify we're in a git repository
+          2. Check that .gitignore includes worktrees/ 
+          3. Create worktree: git worktree add worktrees/{{paths.feature_slug}} -b {{paths.branch_name}}
+          4. Verify the worktree was created
+          5. Run tests in worktree to establish clean baseline
+          
+          Report the full worktree path and branch name.
+        output: "worktree_info"
+
+      # Read the plan
+      - id: "load-plan"
+        type: "bash"
+        command: |
+          cat "{{project_path}}/{{paths.plan_path}}"
+        output: "plan_doc"
+
+      # Execute the plan with TDD using the implementer agent
+      - id: "execute-plan"
+        agent: "superpowers:implementer"
+        prompt: |
+          Execute the implementation plan using strict TDD.
+          
+          Plan:
+          {{plan_doc}}
+          
+          Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}
+          
+          For EACH task in the plan:
+          1. Write the test FIRST - watch it fail
+          2. Write minimal code to pass the test
+          3. Refactor if needed (keep tests green)
+          4. Verify all tests still pass
+          5. Mark task complete
+          
+          IMPORTANT:
+          - Work in the worktree directory, not the main project
+          - Follow TDD strictly - no code without failing test first
+          - Run tests after each task
+          - Stop and report if tests fail unexpectedly
+          
+          Report progress as you complete each task.
+        output: "implementation_result"
+        on_error: "continue"
+
+      # Debug handler for failures
+      - id: "check-for-errors"
+        type: "bash"
+        command: |
+          if [ -n "{{implementation_result}}" ]; then
+            echo '{"has_error": false}'
+          else
+            echo '{"has_error": true}'
+          fi
+        parse_json: true
+        output: "error_check"
+
+      - id: "debug-if-needed"
+        condition: "{{error_check.has_error}} == true"
+        agent: "foundation:bug-hunter"
+        prompt: |
+          Implementation encountered an error. Debug and fix.
+          
+          Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}
+          
+          Follow systematic debugging:
+          1. Read error messages carefully
+          2. Identify root cause (don't guess)
+          3. Form hypothesis
+          4. Apply minimal fix
+          5. Verify fix works
+          
+          Report what was wrong and how you fixed it.
+        output: "debug_result"
+
+      # Verify implementation against spec
+      - id: "verify-implementation"
+        agent: "superpowers:spec-reviewer"
+        prompt: |
+          Verify the implementation is complete and correct.
+          
+          Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}
+          Plan: {{plan_doc}}
+          
+          Check:
+          1. All tasks from plan are complete
+          2. All tests pass
+          3. Code follows project conventions
+          4. No debug code or temporary hacks left behind
+          
+          Provide a verification report with pass/fail status.
+        output: "verification_result"
+
+      # Present implementation for approval
+      - id: "present-implementation"
+        type: "bash"
+        command: |
+          cd "{{project_path}}/worktrees/{{paths.feature_slug}}" && \
+          echo "=== Implementation Summary ===" && \
+          echo "Branch: {{paths.branch_name}}" && \
+          echo "Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}" && \
+          echo "" && \
+          echo "=== Changes ===" && \
+          git diff --stat main 2>/dev/null || git diff --stat HEAD~5 2>/dev/null || echo "Unable to show diff" && \
+          echo "" && \
+          echo "=== Test Status ===" && \
+          (python -m pytest --tb=no -q 2>/dev/null || npm test 2>/dev/null || echo "Run tests manually to verify")
+        output: "implementation_summary"
+
+    # APPROVAL GATE 3: Choose finish action
+    approval:
+      prompt: |
+        ## Implementation Complete
+        
+        {{implementation_summary}}
+        
+        Verification: {{verification_result}}
+        
+        Choose how to finish:
+        - **APPROVE** with message "merge" - Merge to main and cleanup
+        - **APPROVE** with message "pr" - Create pull request
+        - **APPROVE** with message "keep" - Keep branch for later
+        - **DENY** with reason - Stop and address issues
+
+  # ==========================================================================
+  # STAGE 4: Finish
+  # Execute chosen action and cleanup
+  # ==========================================================================
+  - name: "finish"
+    steps:
+      # Parse the approval message for action
+      - id: "determine-action"
+        type: "bash"
+        command: |
+          ACTION="{{_approval_message}}"
+          if [ -z "$ACTION" ]; then
+            ACTION="pr"
+          fi
+          echo "{\"action\": \"${ACTION}\"}"
+        parse_json: true
+        output: "finish_action"
+
+      # Execute the finish action
+      - id: "execute-finish"
+        agent: "foundation:git-ops"
+        prompt: |
+          Finish the development branch.
+          
+          Action: {{finish_action.action}}
+          Branch: {{paths.branch_name}}
+          Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}
+          Feature: {{feature_name}}
+          
+          Based on the action:
+          
+          If "merge":
+          1. Ensure all tests pass
+          2. Merge branch to main: git checkout main && git merge {{paths.branch_name}}
+          3. Delete the branch: git branch -d {{paths.branch_name}}
+          4. Remove worktree: git worktree remove worktrees/{{paths.feature_slug}}
+          
+          If "pr":
+          1. Push branch: git push -u origin {{paths.branch_name}}
+          2. Create PR using gh cli: gh pr create --title "{{feature_name}}" --body "Implementation of {{feature_name}}"
+          3. Report PR URL
+          4. Keep worktree for potential revisions
+          
+          If "keep":
+          1. Just report that branch and worktree are preserved
+          2. Provide instructions for resuming later
+          
+          Report what was done.
+        output: "finish_result"
+
+      # Final summary
+      - id: "final-summary"
+        type: "bash"
+        command: |
+          echo "============================================"
+          echo "  SUPERPOWERS DEVELOPMENT CYCLE COMPLETE"
+          echo "============================================"
+          echo ""
+          echo "Feature: {{feature_name}}"
+          echo "Action: {{finish_action.action}}"
+          echo ""
+          echo "Artifacts:"
+          echo "  Design: {{paths.design_path}}"
+          echo "  Plan: {{paths.plan_path}}"
+          echo ""
+          echo "{{finish_result}}"
+          echo ""
+          echo "============================================"
+        output: "final_output"
+
+final_output: "final_output"

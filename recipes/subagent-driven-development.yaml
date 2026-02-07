@@ -1,181 +1,541 @@
-name: "subagent-driven-development"
-description: "Execute implementation plan with fresh agent per task and two-stage review (spec compliance, then code quality)"
-version: "1.0.0"
-author: "Superpowers Bundle"
-tags: ["implementation", "tdd", "review", "workflow"]
-
-# This recipe implements the core Superpowers execution workflow:
-# 1. Parse the implementation plan to extract tasks
-# 2. For each task:
-#    a. Implementer agent implements following TDD
-#    b. Spec reviewer validates against spec
-#    c. Code quality reviewer checks quality
-# 3. Final review of entire implementation
+# Subagent-Driven Development Workflow
+# A sophisticated implementation workflow that dispatches fresh agents per task,
+# with two-stage review after each: spec compliance first, then code quality.
+#
+# Key Features:
+#   - Fresh agent per task (no context pollution between tasks)
+#   - Two separate review stages (spec compliance THEN code quality - order matters!)
+#   - Foreach loops iterate over all tasks automatically
+#   - Human approval gate after final review before finishing
+#
+# Workflow:
+#   For EACH task:
+#     1. Dispatch fresh implementer agent (TDD approach)
+#     2. Spec compliance review - iterate until spec-compliant
+#     3. Code quality review - iterate until approved
+#     4. Mark task complete
+#   After ALL tasks:
+#     5. Full code review of entire implementation
+#     6. APPROVAL GATE - human checkpoint
+#     7. Verify tests and present merge options
 #
 # Usage:
-#   amplifier run "execute subagent-driven-development.yaml with plan_path=docs/plans/2024-01-15-auth-feature.md"
+#   amplifier run "execute superpowers:recipes/subagent-driven-development.yaml with plan_path=docs/implementation-plan.md"
 #
-# Required: A plan document created by the plan-writer agent
+# After the approval gate:
+#   amplifier run "list pending approvals"
+#   amplifier run "approve recipe session <session-id> stage final-review"
+#   amplifier run "resume recipe session <session-id>"
+
+name: "subagent-driven-development"
+description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
+version: "2.0.0"
+author: "Superpowers Bundle"
+tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach"]
 
 context:
-  plan_path: ""          # Required: path to implementation plan
-  current_task: 1        # Starting task number
-  worktree_branch: ""    # Optional: branch name if using worktree
+  plan_path: ""  # Required: Path to the implementation plan file
 
-steps:
-  # Step 1: Parse the plan and extract tasks
-  - id: "parse-plan"
-    agent: "foundation:explorer"
-    prompt: |
-      Read the implementation plan at: {{plan_path}}
-      
-      Extract and return:
-      1. The total number of tasks
-      2. For each task:
-         - Task number
-         - Task name
-         - Full task specification (all steps, files, code)
-      
-      Format as structured output that can be iterated over.
-    output: "plan_tasks"
-    timeout: 120
+stages:
+  # ============================================================================
+  # STAGE 1: Task Execution
+  # Dispatch fresh agents to implement each task with two-stage review
+  # ============================================================================
+  - name: "task-execution"
+    steps:
+      # -----------------------------------------------------------------------
+      # Step 1: Load and Parse Implementation Plan
+      # -----------------------------------------------------------------------
+      - id: "load-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Load the implementation plan from: {{plan_path}}
 
-  # Step 2: Execute each task with implementer
-  - id: "implement-task"
-    agent: "superpowers:implementer"
-    prompt: |
-      ## Implementation Task
-      
-      **Plan:** {{plan_path}}
-      **Task:** {{current_task}}
-      
-      Here is the full task specification:
-      
-      {{plan_tasks}}
-      
-      ---
-      
-      Implement this task following strict TDD:
-      1. Write the failing test
-      2. Verify it fails for the right reason
-      3. Write minimal code to pass
-      4. Verify all tests pass
-      5. Commit with clear message
-      6. Self-review before signaling completion
-      
-      If you have questions about the spec, ask them BEFORE implementing.
-    output: "implementation_result"
-    timeout: 600
+          Parse the plan and extract all implementation tasks as a structured list.
+          
+          For each task, extract:
+          - task_id: Unique identifier or name
+          - description: What needs to be implemented
+          - spec: The detailed specification/requirements
+          - acceptance_criteria: How to verify the task is complete
+          - files: Files likely to be created or modified
+          - dependencies: Any tasks this depends on (if applicable)
 
-  # Step 3: Spec compliance review
-  - id: "spec-review"
-    agent: "superpowers:spec-reviewer"
-    prompt: |
-      ## Spec Compliance Review
-      
-      **Original Task Spec:**
-      {{plan_tasks}}
-      
-      **Implementation Result:**
-      {{implementation_result}}
-      
-      ---
-      
-      Review this implementation for SPEC COMPLIANCE ONLY:
-      - Is every requirement implemented?
-      - Is there anything extra not in spec?
-      - Does behavior match spec exactly?
-      
-      Return verdict: APPROVED or NEEDS CHANGES
-      If NEEDS CHANGES, list specific issues.
-    output: "spec_review_result"
-    timeout: 300
+          Return the tasks as a JSON array that can be iterated.
+          Order tasks by dependencies (independent tasks first, dependent tasks later).
 
-  # Step 4: Handle spec review failures (conditional)
-  - id: "fix-spec-issues"
-    condition: "{{spec_review_result.verdict}} == 'NEEDS CHANGES'"
-    agent: "superpowers:implementer"
-    prompt: |
-      ## Fix Spec Compliance Issues
-      
-      The spec reviewer found these issues:
-      {{spec_review_result}}
-      
-      Fix ONLY these specific issues. Do not make other changes.
-      Then self-review and signal completion.
-    output: "spec_fix_result"
-    timeout: 300
+          IMPORTANT: Preserve ALL spec details - they are critical for review.
+        output: "tasks"
+        parse_json: true
+        timeout: 180
 
-  # Step 5: Code quality review (only after spec compliance)
-  - id: "quality-review"
-    agent: "superpowers:code-quality-reviewer"
-    prompt: |
-      ## Code Quality Review
-      
-      **Spec compliance:** APPROVED
-      
-      **Implementation:**
-      {{implementation_result}}
-      
-      ---
-      
-      Review code quality:
-      - Code clarity and naming
-      - Error handling
-      - Test quality
-      - Design quality
-      - Security considerations
-      - Maintainability
-      
-      Return verdict: APPROVED or NEEDS CHANGES
-      Categorize issues as Critical, Important, or Suggestion.
-    output: "quality_review_result"
-    timeout: 300
+      - id: "validate-tasks"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Validate the extracted tasks before execution begins.
 
-  # Step 6: Handle quality review failures (conditional)
-  - id: "fix-quality-issues"
-    condition: "{{quality_review_result.verdict}} == 'NEEDS CHANGES'"
-    agent: "superpowers:implementer"
-    prompt: |
-      ## Fix Code Quality Issues
-      
-      The code quality reviewer found these issues:
-      {{quality_review_result}}
-      
-      Fix the Critical and Important issues. Suggestions are optional.
-      Maintain spec compliance while fixing.
-    output: "quality_fix_result"
-    timeout: 300
+          Tasks: {{tasks}}
+          Original plan: {{plan_path}}
 
-  # Step 7: Task completion summary
-  - id: "task-complete"
-    agent: "foundation:zen-architect"
-    mode: "REVIEW"
-    prompt: |
-      ## Task Completion Summary
-      
-      **Task:** {{current_task}} from {{plan_path}}
-      
-      **Implementation:** {{implementation_result}}
-      **Spec Review:** {{spec_review_result}}
-      **Quality Review:** {{quality_review_result}}
-      
-      Summarize:
-      1. What was implemented
-      2. Key decisions made
-      3. Any concerns for future tasks
-      4. Ready status for next task
-    output: "task_summary"
-    timeout: 120
+          Check:
+          1. Are all tasks properly defined with specs and acceptance criteria?
+          2. Are dependencies correctly ordered?
+          3. Are there any tasks with unclear or missing specifications?
+          4. Is the task list complete (no missing tasks from the plan)?
 
-# Output structure:
-# 
-# plan_tasks: Parsed task list from plan
-# implementation_result: Implementer's output (commits, changes, self-review)
-# spec_review_result: Spec reviewer verdict and issues
-# quality_review_result: Quality reviewer verdict and issues
-# task_summary: Final summary of completed task
-#
-# Note: This recipe handles ONE task. For multiple tasks, 
-# orchestrate by calling this recipe for each task in sequence,
-# or use the foreach construct when available.
+          If there are issues, list them clearly.
+          If tasks are valid, confirm they're ready for implementation.
+
+          Return:
+          - validation_status: "ready" | "issues_found"
+          - issues: [list of any issues, empty if none]
+          - task_count: total number of tasks
+          - estimated_complexity: "simple" | "moderate" | "complex"
+        output: "task_validation"
+        timeout: 120
+
+      # -----------------------------------------------------------------------
+      # Step 2: Implement Each Task (Fresh Agent Per Task)
+      # -----------------------------------------------------------------------
+      - id: "implement-task"
+        foreach: "{{tasks}}"
+        as: "current_task"
+        agent: "superpowers:implementer"
+        prompt: |
+          SUBAGENT IMPLEMENTATION TASK
+          ============================
+
+          You are a fresh agent assigned to implement ONE specific task.
+          Focus ONLY on this task. Do not consider other tasks.
+
+          TASK TO IMPLEMENT:
+          {{current_task}}
+
+          IMPLEMENTATION REQUIREMENTS:
+          
+          1. FOLLOW TDD (Test-Driven Development):
+             - Write failing tests FIRST based on the spec
+             - Implement code to make tests pass
+             - Refactor if needed while keeping tests green
+          
+          2. FOLLOW THE SPEC EXACTLY:
+             - Implement exactly what the spec says
+             - Do not add features not in the spec
+             - Do not skip any spec requirements
+             - Match the acceptance criteria precisely
+          
+          3. DOCUMENT YOUR WORK:
+             - List all files created/modified
+             - Note any important implementation decisions
+             - Record test coverage for this task
+          
+          4. VERIFY BEFORE COMPLETING:
+             - Run the tests you wrote
+             - Confirm they pass
+             - Check acceptance criteria are met
+
+          OUTPUT FORMAT:
+          Return your implementation results including:
+          - task_id: Which task was implemented
+          - files_changed: [list of files created/modified]
+          - tests_written: [list of test files/functions]
+          - test_results: pass/fail with details
+          - implementation_notes: Key decisions or notes
+          - spec_coverage: How each spec requirement was addressed
+        collect: "task_implementations"
+        timeout: 900  # 15 minutes per task
+
+      # -----------------------------------------------------------------------
+      # Step 3: Spec Compliance Review (Fresh Agent Per Task)
+      # -----------------------------------------------------------------------
+      - id: "spec-compliance-review"
+        foreach: "{{task_implementations}}"
+        as: "implementation"
+        agent: "superpowers:spec-reviewer"
+        prompt: |
+          SPEC COMPLIANCE REVIEW
+          ======================
+          Review Stage 1 of 2: Verify implementation matches specification EXACTLY.
+
+          IMPLEMENTATION TO REVIEW:
+          {{implementation}}
+
+          ORIGINAL TASKS (for spec reference):
+          {{tasks}}
+
+          YOUR MISSION:
+          Verify that the implementation matches the specification EXACTLY.
+          This is a STRICT compliance check - no deviations allowed.
+
+          REVIEW CHECKLIST:
+          1. [ ] Every spec requirement is implemented
+          2. [ ] No features added that weren't in the spec
+          3. [ ] Acceptance criteria are fully met
+          4. [ ] Tests cover all spec requirements
+          5. [ ] No spec interpretation errors
+
+          REVIEW LOOP INSTRUCTIONS:
+          - If issues found: Clearly list each deviation from spec
+          - Fix the issues yourself by modifying the code to match spec
+          - Re-review after each fix
+          - Continue iterating until the implementation is 100% spec-compliant
+          - Only mark approved when ZERO spec deviations remain
+
+          OUTPUT FORMAT:
+          - task_id: Which task was reviewed
+          - spec_compliance_status: "approved" | "fixed_and_approved"
+          - issues_found: [list of spec deviations found, empty if none]
+          - fixes_applied: [list of fixes made, empty if none]
+          - iterations_required: number of review/fix cycles
+          - final_verification: Confirmation that implementation matches spec exactly
+        collect: "spec_reviews"
+        timeout: 600  # 10 minutes per review
+
+      # -----------------------------------------------------------------------
+      # Step 4: Code Quality Review (Fresh Agent Per Task)
+      # -----------------------------------------------------------------------
+      - id: "code-quality-review"
+        foreach: "{{spec_reviews}}"
+        as: "spec_review"
+        agent: "superpowers:code-quality-reviewer"
+        prompt: |
+          CODE QUALITY REVIEW
+          ===================
+          Review Stage 2 of 2: Verify code quality and best practices.
+
+          SPEC REVIEW RESULTS (from Stage 1):
+          {{spec_review}}
+
+          TASK IMPLEMENTATIONS:
+          {{task_implementations}}
+
+          ORIGINAL TASKS:
+          {{tasks}}
+
+          YOUR MISSION:
+          Now that spec compliance is verified, review for code QUALITY.
+          This is about maintainability, readability, and best practices.
+
+          QUALITY CHECKLIST:
+          1. [ ] Clean code principles followed
+          2. [ ] Proper naming conventions
+          3. [ ] No code duplication (DRY)
+          4. [ ] Appropriate abstraction levels
+          5. [ ] Error handling is robust
+          6. [ ] Tests are meaningful (not just coverage padding)
+          7. [ ] Code is maintainable and readable
+          8. [ ] No obvious performance issues
+          9. [ ] Security best practices followed
+
+          REVIEW LOOP INSTRUCTIONS:
+          - If quality issues found: List each issue with severity (critical/major/minor)
+          - Fix critical and major issues yourself
+          - Minor issues can be noted but don't block approval
+          - Re-review after fixes to verify improvements
+          - Continue until no critical/major issues remain
+          - Approve when code meets quality standards
+
+          IMPORTANT: Do NOT change spec behavior during quality fixes.
+          Only refactor for quality while preserving exact functionality.
+
+          OUTPUT FORMAT:
+          - task_id: Which task was reviewed
+          - quality_status: "approved" | "fixed_and_approved"
+          - issues_found: [list of quality issues by severity]
+          - fixes_applied: [list of quality improvements made]
+          - iterations_required: number of review/fix cycles
+          - quality_score: 1-10 rating of final code quality
+          - notes: Any recommendations for future improvement
+        collect: "quality_reviews"
+        timeout: 600  # 10 minutes per review
+
+      # -----------------------------------------------------------------------
+      # Step 5: Task Completion Summary
+      # -----------------------------------------------------------------------
+      - id: "task-summary"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          TASK EXECUTION SUMMARY
+          ======================
+          Compile a summary of all completed tasks.
+
+          QUALITY REVIEWS (Final Status):
+          {{quality_reviews}}
+
+          SPEC REVIEWS:
+          {{spec_reviews}}
+
+          IMPLEMENTATIONS:
+          {{task_implementations}}
+
+          ORIGINAL TASKS:
+          {{tasks}}
+
+          Create a comprehensive summary including:
+
+          ## Completion Status
+          - Total tasks: [count]
+          - Successfully completed: [count]
+          - Tasks requiring attention: [count if any]
+
+          ## Per-Task Summary
+          For each task:
+          - Task ID/Name
+          - Implementation status
+          - Spec compliance: approved/issues
+          - Code quality score: X/10
+          - Files modified
+          - Test coverage
+
+          ## Review Statistics
+          - Total spec compliance iterations: [sum]
+          - Total quality review iterations: [sum]
+          - Average quality score: [average]
+
+          ## Issues Resolved
+          Summary of issues found and fixed during reviews.
+
+          ## Remaining Concerns
+          Any minor issues or recommendations noted but not addressed.
+
+          Mark the implementation plan file to show task completion status.
+        output: "execution_summary"
+        timeout: 300
+
+  # ============================================================================
+  # STAGE 2: Final Review (APPROVAL GATE)
+  # Full code review of the entire implementation before finishing
+  # ============================================================================
+  - name: "final-review"
+    steps:
+      - id: "full-code-review"
+        agent: "superpowers:code-quality-reviewer"
+        prompt: |
+          FINAL COMPREHENSIVE CODE REVIEW
+          ================================
+          Review the ENTIRE implementation across all tasks.
+
+          EXECUTION SUMMARY:
+          {{execution_summary}}
+
+          QUALITY REVIEWS:
+          {{quality_reviews}}
+
+          ORIGINAL PLAN:
+          {{plan_path}}
+
+          This is the final review before the implementation is considered complete.
+          Look at the implementation HOLISTICALLY, not just individual tasks.
+
+          REVIEW AREAS:
+
+          1. CROSS-CUTTING CONCERNS
+             - Are there patterns that should be unified?
+             - Any inconsistencies between tasks?
+             - Shared utilities that should be extracted?
+
+          2. INTEGRATION
+             - Do all tasks work together correctly?
+             - Any integration issues between components?
+             - Are interfaces consistent?
+
+          3. ARCHITECTURE
+             - Does the overall structure make sense?
+             - Are dependencies appropriate?
+             - Is the code organized logically?
+
+          4. TEST COVERAGE
+             - Is there adequate integration testing?
+             - Any gaps in test coverage?
+             - Are edge cases handled?
+
+          5. DOCUMENTATION
+             - Is code self-documenting?
+             - Any complex logic that needs comments?
+             - Is the public API clear?
+
+          6. PRODUCTION READINESS
+             - Error handling comprehensive?
+             - Logging appropriate?
+             - No debug code left in?
+
+          OUTPUT FORMAT:
+          ## Overall Assessment
+          - Implementation Quality: [excellent/good/acceptable/needs-work]
+          - Recommendation: [approve/approve-with-notes/request-changes]
+
+          ## Findings by Category
+          [Group findings by the review areas above]
+
+          ## Critical Issues (if any)
+          [Must be addressed before approval]
+
+          ## Recommendations
+          [Nice-to-have improvements for future]
+
+          ## Files Changed Summary
+          [Complete list of all files modified across all tasks]
+        output: "final_review"
+        timeout: 600
+
+      - id: "prepare-approval"
+        agent: "superpowers:implementer"
+        prompt: |
+          Prepare for human approval checkpoint.
+
+          FINAL REVIEW:
+          {{final_review}}
+
+          EXECUTION SUMMARY:
+          {{execution_summary}}
+
+          Run the full test suite to provide current test status:
+          - Execute all tests
+          - Report pass/fail counts
+          - Note any failing tests
+
+          Also prepare:
+          - Git status showing all changes
+          - Summary of branch state
+          - List of commits made during implementation
+        output: "approval_prep"
+        timeout: 300
+
+    approval:
+      required: true
+      prompt: |
+        ======================================================================
+        FINAL REVIEW COMPLETE - HUMAN APPROVAL REQUIRED
+        ======================================================================
+
+        The subagent-driven implementation is complete. All tasks have been:
+        1. Implemented by fresh agents following TDD
+        2. Reviewed for spec compliance (with iteration until approved)
+        3. Reviewed for code quality (with iteration until approved)
+        4. Given a final comprehensive review
+
+        Review the final assessment above carefully.
+
+        OPTIONS:
+        - APPROVE: Accept the implementation and proceed to finish branch
+        - DENY: Stop and address issues before continuing
+
+        If you have feedback, note it before approving.
+        ======================================================================
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 3: Finish Branch
+  # Verify all tests pass and present merge options
+  # ============================================================================
+  - name: "finish"
+    steps:
+      - id: "verify-tests"
+        agent: "superpowers:implementer"
+        prompt: |
+          FINAL VERIFICATION
+          ==================
+          Perform final verification before presenting merge options.
+
+          FINAL REVIEW:
+          {{final_review}}
+
+          APPROVAL PREP:
+          {{approval_prep}}
+
+          Execute comprehensive verification:
+
+          1. RUN FULL TEST SUITE
+             - Run ALL tests (unit, integration, e2e if applicable)
+             - Ensure 100% pass rate
+             - Note test counts and coverage
+
+          2. LINT AND FORMAT CHECK
+             - Run linting tools
+             - Check code formatting
+             - Ensure no warnings
+
+          3. BUILD CHECK (if applicable)
+             - Verify project builds successfully
+             - No build warnings
+
+          4. FINAL GIT STATUS
+             - Confirm all changes are committed
+             - No uncommitted files
+             - Branch is clean
+
+          Report any failures. These MUST be fixed before merge.
+        output: "verification_results"
+        timeout: 600
+
+      - id: "present-merge-options"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          IMPLEMENTATION COMPLETE - MERGE OPTIONS
+          =======================================
+
+          VERIFICATION RESULTS:
+          {{verification_results}}
+
+          EXECUTION SUMMARY:
+          {{execution_summary}}
+
+          FINAL REVIEW:
+          {{final_review}}
+
+          Present the completion status and merge options.
+
+          IF VERIFICATION PASSED:
+
+          ## Implementation Complete
+
+          All tasks from the implementation plan have been:
+          - Implemented following TDD
+          - Reviewed for spec compliance
+          - Reviewed for code quality
+          - Verified with passing tests
+
+          ### Summary
+          - Tasks completed: [count]
+          - Tests passing: [count]
+          - Average quality score: [score]/10
+
+          ### Files Changed
+          [Complete list of modified files]
+
+          ### Next Steps - Choose One:
+
+          1. **Merge to main branch**
+             ```bash
+             git checkout main
+             git merge <current-branch>
+             git push origin main
+             ```
+
+          2. **Create Pull Request**
+             For team code review before merging.
+             ```bash
+             gh pr create --title "Implementation: [plan name]" --body "..."
+             ```
+
+          3. **Additional Human Review**
+             Request detailed walkthrough of changes.
+
+          ### Branch Information
+          [Current branch name and commit info]
+
+          IF VERIFICATION FAILED:
+
+          ## Issues Found
+          List what failed and needs to be addressed.
+          Do NOT present merge options until issues are resolved.
+
+          ### Required Fixes
+          [List each issue that must be fixed]
+
+          ### Next Steps
+          Fix the listed issues, then re-run verification.
+        output: "completion_report"
+        timeout: 300

@@ -1,0 +1,257 @@
+# Brainstorming Workflow
+# Turns rough ideas into fully formed designs through collaborative dialogue
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/brainstorming.yaml with topic='feature name'"
+#   amplifier run "execute superpowers:recipes/brainstorming.yaml"  # Topic extracted from conversation
+#
+# This is a staged recipe with an approval gate after design presentation.
+# Human must approve the design before it gets saved to docs/plans/.
+
+name: "brainstorming"
+description: "Design refinement workflow that turns rough ideas into fully formed designs through collaborative dialogue"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["design", "brainstorming", "planning", "architecture", "collaborative"]
+
+context:
+  topic: ""           # The feature/idea being designed (optional, extracted from conversation)
+  project_path: "."   # Path to the project (defaults to current working directory)
+
+stages:
+  # ==========================================================================
+  # STAGE 1: Discovery & Design
+  # Understand the project, refine requirements, explore approaches, present design
+  # ==========================================================================
+  - name: "discovery-and-design"
+    steps:
+      # Step 1: Understand the current project state
+      - id: "understand-context"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Understand the current project context for this brainstorming session.
+
+          Project path: {{project_path}}
+          Topic (if provided): {{topic}}
+
+          Check the project state:
+          1. Review key files and directory structure to understand the codebase
+          2. Look at relevant documentation (README, docs/, etc.)
+          3. Check recent commits to understand current momentum and direction
+
+          Provide a brief summary (3-5 paragraphs) of:
+          - What this project does
+          - Current architecture and tech stack
+          - Recent activity and focus areas
+          - Any relevant context for the topic we're exploring
+
+          This context will inform our design discussion.
+        output: "project_context"
+        timeout: 300
+
+      # Step 2: Explore and refine requirements through dialogue
+      - id: "explore-requirements"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Based on the project context:
+          {{project_context}}
+
+          Topic to explore: {{topic}}
+
+          Help refine this idea through collaborative dialogue.
+
+          IMPORTANT GUIDELINES:
+          1. Ask clarifying questions ONE AT A TIME (not a list of questions)
+          2. STRONGLY PREFER multiple choice questions, e.g.:
+             "Which approach resonates more with you?
+              A) Synchronous processing with immediate feedback
+              B) Async queue-based processing for better scalability
+              C) Hybrid approach with sync for small items, async for large"
+          3. Focus on understanding:
+             - What specific problem are we solving?
+             - Who benefits from this and how?
+             - What are the key constraints (time, complexity, compatibility)?
+             - What does success look like?
+          4. After each answer, acknowledge and ask the next most important question
+          5. Continue until you have enough clarity to propose approaches
+
+          Start with the single most important clarifying question to understand the core need.
+        output: "requirements"
+        timeout: 900
+
+      # Step 3: Propose multiple approaches with trade-offs
+      - id: "explore-approaches"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Based on the refined requirements from our discussion:
+          {{requirements}}
+
+          Project context:
+          {{project_context}}
+
+          Propose 2-3 different approaches to solve this.
+
+          For EACH approach, provide:
+
+          ### Approach N: [Descriptive Name]
+          **Core Idea:** (2-3 sentences explaining the approach)
+
+          **Pros:**
+          - [benefit 1]
+          - [benefit 2]
+
+          **Cons:**
+          - [drawback 1]
+          - [drawback 2]
+
+          **Complexity:** [Low / Medium / High]
+
+          **Best For:** [When this approach shines]
+
+          ---
+
+          After presenting all approaches, provide your RECOMMENDATION:
+
+          ## Recommended Approach
+          I recommend **[Approach Name]** because:
+          1. [Primary reason tied to requirements]
+          2. [Secondary reason]
+          3. [How it handles the main constraints]
+
+          Ask: "Does this recommendation align with your thinking? Would you like to explore any approach in more detail, or shall we proceed with the design?"
+        output: "approaches"
+        timeout: 600
+
+      # Step 4: Present the full design in digestible sections
+      - id: "present-design"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Create a detailed design based on:
+
+          Selected approach and recommendation:
+          {{approaches}}
+
+          Requirements from our discussion:
+          {{requirements}}
+
+          Project context:
+          {{project_context}}
+
+          Present the design in digestible sections (200-300 words each).
+          After EACH section, pause and ask for validation before continuing.
+
+          ## Section 1: Overview
+          What we're building, why it matters, and the key insight driving this design.
+          [Present section, then ask: "Does this overview capture the essence? Any adjustments?"]
+
+          ## Section 2: Architecture
+          Key components and how they interact. Include a simple diagram if helpful.
+          [Present section, then ask: "Does this architecture make sense? Any concerns?"]
+
+          ## Section 3: Implementation Strategy
+          How we'll build this step by step. Phase the work if appropriate.
+          [Present section, then ask: "Does this sequence feel right? Anything to reprioritize?"]
+
+          ## Section 4: Risk Mitigation
+          Potential issues and how we'll handle them. What could go wrong and our safeguards.
+          [Present section, then ask: "Any other risks you're worried about?"]
+
+          ## Section 5: Success Criteria
+          How we'll know it's working. Measurable outcomes and acceptance criteria.
+          [Present section, then ask: "Are these the right measures of success?"]
+
+          After all sections are validated, compile the complete design document.
+        output: "design"
+        timeout: 1200
+
+    # APPROVAL GATE: Human must validate the design before saving
+    approval:
+      required: true
+      prompt: |
+        The design document is ready for your final review.
+
+        Please review the complete design above and:
+        - APPROVE if the design captures your vision and you're ready to save it
+        - DENY if you want to make changes or need more iteration
+
+        Once approved, the design will be saved to:
+        docs/plans/YYYY-MM-DD-<topic>-design.md
+      timeout: 0      # Wait indefinitely for human review
+      default: "deny"
+
+  # ==========================================================================
+  # STAGE 2: Finalization
+  # Save the approved design and offer handoff to implementation
+  # ==========================================================================
+  - name: "finalization"
+    steps:
+      # Step 5: Save the validated design to a file
+      - id: "save-design"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Save the approved design document to the project.
+
+          Design content to save:
+          {{design}}
+
+          Topic: {{topic}}
+          Project path: {{project_path}}
+
+          Create the design document at:
+          {{project_path}}/docs/plans/YYYY-MM-DD-<topic-slug>-design.md
+
+          Where:
+          - YYYY-MM-DD is today's date
+          - <topic-slug> is a URL-safe version of the topic (lowercase, hyphens, no special chars)
+          - If topic is empty, use "design" as the slug
+
+          The document should be well-formatted markdown including:
+          1. Title with the topic name
+          2. Date and status (e.g., "Status: Approved")
+          3. All design sections from the presentation
+          4. A "Next Steps" section summarizing implementation priorities
+
+          Create the docs/plans/ directory if it doesn't exist.
+          Write the file and confirm the full path where it was saved.
+        output: "design_file_path"
+        timeout: 300
+
+      # Step 6: Offer handoff to implementation
+      - id: "handoff"
+        agent: "superpowers:brainstormer"
+        prompt: |
+          Design has been saved to: {{design_file_path}}
+
+          Present the handoff options to the user:
+
+          ---
+
+          Your design is now documented and ready for implementation!
+
+          **Saved to:** {{design_file_path}}
+
+          **Would you like to proceed with implementation?**
+
+          1. **Worktree Setup** - Create an isolated git worktree for this feature
+             (Keeps your main branch clean while you work on this feature)
+             ```
+             Execute superpowers:recipes/git-worktree-setup.yaml with branch_name=feature/<topic-slug>
+             ```
+
+          2. **Implementation Planning** - Break down the design into concrete tasks
+             (Create a detailed task list with estimates and dependencies)
+             ```
+             Execute superpowers:recipes/writing-plans.yaml with design_path={{design_file_path}}
+             ```
+
+          3. **Both** - Full handoff to the implementation workflow
+             (Recommended: Sets up worktree AND creates implementation plan)
+
+          4. **Done for now** - Review the design document and continue later
+             (The design is saved; you can pick this up anytime)
+
+          ---
+
+          Which option would you prefer?
+        output: "next_steps"
+        timeout: 300

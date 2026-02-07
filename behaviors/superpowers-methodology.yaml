@@ -20,14 +20,15 @@ bundle:
     
     Compose onto your bundle for the Superpowers methodology.
 
-agents:
-  include:
-    - superpowers:implementer
-    - superpowers:spec-reviewer
-    - superpowers:code-quality-reviewer
-    - superpowers:brainstormer
-    - superpowers:plan-writer
+  agents:
+    include:
+      - superpowers:implementer
+      - superpowers:spec-reviewer
+      - superpowers:code-quality-reviewer
+      - superpowers:brainstormer
+      - superpowers:plan-writer
 
-context:
-  include:
-    - superpowers:context/superpowers-methodology.md
+  context:
+    include:
+      - superpowers:context/philosophy.md
+      - superpowers:context/instructions.md

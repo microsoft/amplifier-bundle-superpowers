@@ -1,0 +1,452 @@
+# Finish Branch Workflow
+# Completes a development branch after implementation is done.
+#
+# Workflow:
+#   1. Verify all tests pass
+#   2. Summarize what was implemented (files changed, features added)
+#   3. Present options for branch disposition
+#   4. APPROVAL GATE - User selects option
+#   5. Execute the chosen action
+#   6. Clean up worktree if appropriate
+#
+# Options presented:
+#   - MERGE: Fast-forward merge to main (requires tests passing)
+#   - PR: Create pull request for review
+#   - KEEP: Leave branch as-is for later
+#   - DISCARD: Delete branch and worktree (abandon work)
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/finish-branch.yaml"
+#   amplifier run "execute superpowers:recipes/finish-branch.yaml with branch_name=feature/my-feature"
+#
+# After approval gate:
+#   amplifier run "list pending approvals"
+#   amplifier run "approve recipe session <session-id> stage option-selection"
+#   amplifier run "resume recipe session <session-id>"
+#
+# IMPORTANT: When approving, specify your choice (MERGE, PR, KEEP, or DISCARD)
+# in the conversation before running the approve command.
+
+name: "finish-branch"
+description: "Complete a development branch - verify tests, present options, execute choice, clean up"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["git", "branch-management", "workflow", "human-in-loop"]
+
+context:
+  branch_name: ""      # Optional: Auto-detected if in worktree
+  worktree_path: ""    # Optional: Auto-detected from current directory
+
+stages:
+  # ============================================================================
+  # STAGE 1: Verify Tests and Gather Information
+  # ============================================================================
+  - name: "verify-and-summarize"
+    steps:
+      - id: "detect-branch-info"
+        agent: "foundation:git-ops"
+        prompt: |
+          Detect the current branch and worktree information.
+
+          If branch_name is provided: {{branch_name}}
+          If worktree_path is provided: {{worktree_path}}
+
+          If not provided, auto-detect:
+          1. Get current branch name with: git branch --show-current
+          2. Get worktree path with: git rev-parse --show-toplevel
+          3. Check if we're in a worktree: git rev-parse --git-common-dir
+
+          Also gather:
+          - The main branch name (usually 'main' or 'master')
+          - Whether this branch has been pushed to remote
+          - Number of commits ahead of main
+
+          Return all this information clearly structured.
+        output: "branch_info"
+        timeout: 60
+
+      - id: "run-tests"
+        agent: "superpowers:implementer"
+        prompt: |
+          Run the full test suite for this project.
+
+          Branch info: {{branch_info}}
+
+          Detect and run the appropriate test command:
+          1. Check for pytest (Python): pytest -v
+          2. Check for npm test (Node): npm test
+          3. Check for cargo test (Rust): cargo test
+          4. Check for go test (Go): go test ./...
+          5. Check for make test: make test
+
+          Run the tests and capture:
+          - Exit code (0 = pass, non-zero = fail)
+          - Full test output
+          - Summary: total tests, passed, failed, skipped
+
+          IMPORTANT: Report clearly whether ALL TESTS PASSED or if there were failures.
+        output: "test_results"
+        timeout: 600
+
+      - id: "summarize-changes"
+        agent: "superpowers:code-quality-reviewer"
+        prompt: |
+          Summarize the changes made on this branch.
+
+          Branch info: {{branch_info}}
+
+          Gather and analyze:
+          1. Run: git diff main...HEAD --stat (or appropriate main branch)
+          2. Run: git log main..HEAD --oneline
+          3. Identify files changed, added, deleted
+
+          Create a clear summary including:
+
+          ## Implementation Summary
+          - Branch: [branch name]
+          - Commits: [count] commits ahead of main
+          - Files changed: [count]
+
+          ## What Was Implemented
+          [Brief description based on commit messages and file changes]
+
+          ## Files Modified
+          - List key files with brief description of changes
+
+          ## Key Changes
+          - Bullet points of significant changes
+
+          This summary will be used for PR descriptions if the user chooses that option.
+        output: "change_summary"
+        timeout: 180
+
+  # ============================================================================
+  # STAGE 2: Present Options (APPROVAL GATE)
+  # ============================================================================
+  - name: "option-selection"
+    steps:
+      - id: "present-options"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Present the finish options to the user based on test results.
+
+          Test results: {{test_results}}
+          Change summary: {{change_summary}}
+          Branch info: {{branch_info}}
+
+          Create a clear options display:
+
+          ======================================================================
+          BRANCH READY FOR COMPLETION
+          ======================================================================
+
+          ## Test Results
+          [Show pass/fail status prominently]
+          [If failed, show which tests failed]
+
+          ## Changes Summary
+          [Brief summary from change_summary]
+
+          ======================================================================
+          SELECT AN OPTION
+          ======================================================================
+
+          **MERGE** - Fast-forward merge to main
+          [Only available if tests pass - show enabled/disabled status]
+          - Merges branch directly to main
+          - Removes worktree after merge
+          - Best for: Ready-to-ship changes
+
+          **PR** - Create Pull Request
+          [Always available]
+          - Creates PR with implementation summary
+          - Keeps branch and worktree intact
+          - Best for: Changes needing review
+
+          **KEEP** - Keep branch for later
+          [Always available]
+          - Leaves everything as-is
+          - Branch and worktree remain
+          - Best for: Work in progress
+
+          **DISCARD** - Abandon branch
+          [Always available - DESTRUCTIVE]
+          - Deletes branch (local and remote if pushed)
+          - Removes worktree
+          - Best for: Abandoned experiments
+
+          ======================================================================
+
+          CRITICAL: If tests failed, clearly indicate that MERGE is NOT available.
+          The user must fix tests before merging.
+        output: "options_display"
+        timeout: 120
+
+    approval:
+      required: true
+      prompt: |
+        ======================================================================
+        SELECT YOUR OPTION
+        ======================================================================
+
+        Review the options above and make your selection.
+
+        TO SELECT: Type your choice (MERGE, PR, KEEP, or DISCARD) in the chat,
+        then approve this stage.
+
+        Example: "I choose PR" then approve.
+
+        OPTIONS:
+        - MERGE - Merge to main (if tests pass)
+        - PR - Create pull request
+        - KEEP - Keep branch as-is
+        - DISCARD - Delete branch and worktree
+
+        ======================================================================
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 3: Execute the Chosen Option
+  # ============================================================================
+  - name: "execute-choice"
+    steps:
+      - id: "determine-choice"
+        agent: "foundation:git-ops"
+        prompt: |
+          Determine which option the user selected.
+
+          The user should have indicated their choice (MERGE, PR, KEEP, or DISCARD)
+          before approving the previous stage.
+
+          Look for keywords in the recent context:
+          - "merge" or "MERGE" -> MERGE option
+          - "pr" or "PR" or "pull request" -> PR option
+          - "keep" or "KEEP" -> KEEP option
+          - "discard" or "DISCARD" or "abandon" -> DISCARD option
+
+          If unclear, default to KEEP (safest option).
+
+          Also verify:
+          - Test results: {{test_results}}
+          - If user chose MERGE but tests failed, report that MERGE is blocked
+            and suggest PR or fixing tests first.
+
+          Return:
+          - selected_option: MERGE | PR | KEEP | DISCARD
+          - option_valid: true | false (false if MERGE selected but tests failed)
+          - reason: explanation if option is invalid
+        output: "user_choice"
+        timeout: 60
+
+      - id: "execute-merge"
+        agent: "foundation:git-ops"
+        condition: "{{user_choice.selected_option}} == 'MERGE' and {{user_choice.option_valid}} == 'true'"
+        prompt: |
+          Execute MERGE: Fast-forward merge to main.
+
+          Branch info: {{branch_info}}
+
+          Steps:
+          1. Ensure we're on the feature branch
+          2. Fetch latest from origin
+          3. Switch to main: git checkout main
+          4. Pull latest main: git pull origin main
+          5. Merge the feature branch: git merge --ff-only <branch_name>
+             (Use --ff-only to ensure clean fast-forward)
+          6. Push to origin: git push origin main
+          7. Delete the feature branch locally: git branch -d <branch_name>
+          8. Delete remote branch if it exists: git push origin --delete <branch_name>
+
+          Report:
+          - Merge successful: yes/no
+          - Main branch updated: yes/no
+          - Feature branch deleted: yes/no
+          - Any issues encountered
+
+          Set needs_worktree_cleanup: true
+        output: "execution_result"
+        timeout: 300
+
+      - id: "execute-pr"
+        agent: "foundation:git-ops"
+        condition: "{{user_choice.selected_option}} == 'PR'"
+        prompt: |
+          Execute PR: Create a pull request.
+
+          Branch info: {{branch_info}}
+          Change summary: {{change_summary}}
+
+          Steps:
+          1. Ensure branch is pushed to origin:
+             git push -u origin <branch_name>
+
+          2. Create PR using GitHub CLI:
+             gh pr create --title "<branch_name>" --body "<PR description>"
+
+             PR Description should include:
+             - The change summary from {{change_summary}}
+             - Test status from {{test_results}}
+             - Any relevant notes
+
+          3. Report the PR URL
+
+          If gh CLI is not available, provide the manual instructions:
+          - URL to create PR on GitHub
+          - Suggested title and body
+
+          Report:
+          - PR created: yes/no
+          - PR URL: [url]
+          - Any issues encountered
+
+          Set needs_worktree_cleanup: false
+        output: "execution_result"
+        timeout: 180
+
+      - id: "execute-keep"
+        agent: "foundation:git-ops"
+        condition: "{{user_choice.selected_option}} == 'KEEP'"
+        prompt: |
+          Execute KEEP: Leave branch as-is.
+
+          Branch info: {{branch_info}}
+
+          Simply report the current status:
+          - Branch name: [name]
+          - Worktree location: [path]
+          - Commits ahead of main: [count]
+          - Test status: [from test_results]
+
+          Provide helpful commands for later:
+          - To resume work: cd <worktree_path>
+          - To finish later: Execute superpowers:recipes/finish-branch.yaml
+          - To check status: git status
+
+          Set needs_worktree_cleanup: false
+        output: "execution_result"
+        timeout: 60
+
+      - id: "execute-discard"
+        agent: "foundation:git-ops"
+        condition: "{{user_choice.selected_option}} == 'DISCARD'"
+        prompt: |
+          Execute DISCARD: Delete branch and worktree.
+
+          Branch info: {{branch_info}}
+
+          WARNING: This is destructive! Confirm the branch name before proceeding.
+
+          Steps:
+          1. Switch out of the worktree first (cd to main repo or another location)
+          2. Remove the worktree: git worktree remove <worktree_path> --force
+          3. Delete the local branch: git branch -D <branch_name>
+          4. Delete remote branch if pushed: git push origin --delete <branch_name>
+
+          Report:
+          - Worktree removed: yes/no
+          - Local branch deleted: yes/no
+          - Remote branch deleted: yes/no (or N/A if not pushed)
+          - Any issues encountered
+
+          Set needs_worktree_cleanup: false (already handled)
+        output: "execution_result"
+        timeout: 180
+
+      - id: "handle-blocked-merge"
+        agent: "superpowers:spec-reviewer"
+        condition: "{{user_choice.selected_option}} == 'MERGE' and {{user_choice.option_valid}} == 'false'"
+        prompt: |
+          Handle blocked MERGE request.
+
+          User chose MERGE but it's not valid because: {{user_choice.reason}}
+          Test results: {{test_results}}
+
+          Provide clear guidance:
+
+          ## MERGE Blocked
+
+          You selected MERGE, but this option is currently unavailable.
+
+          **Reason:** [explain why - usually test failures]
+
+          ### Failed Tests
+          [List the failing tests from test_results]
+
+          ### Options
+          1. **Fix the tests** and run this workflow again
+          2. **Create a PR instead** to get review feedback
+          3. **Keep the branch** and fix issues later
+
+          To re-run after fixing:
+          ```
+          Execute superpowers:recipes/finish-branch.yaml
+          ```
+
+          Set needs_worktree_cleanup: false
+        output: "execution_result"
+        timeout: 120
+
+  # ============================================================================
+  # STAGE 4: Cleanup
+  # ============================================================================
+  - name: "cleanup"
+    steps:
+      - id: "cleanup-worktree"
+        agent: "foundation:git-ops"
+        prompt: |
+          Perform cleanup if needed.
+
+          Execution result: {{execution_result}}
+          Branch info: {{branch_info}}
+          User choice: {{user_choice}}
+
+          Check if worktree cleanup is needed:
+          - If MERGE was executed successfully -> Remove worktree
+          - If DISCARD was executed -> Worktree already removed
+          - If PR or KEEP -> No cleanup needed
+
+          If cleanup needed:
+          1. Navigate out of worktree directory
+          2. Run: git worktree remove <worktree_path>
+          3. Verify removal: git worktree list
+
+          Report what was cleaned up (if anything).
+        output: "cleanup_result"
+        timeout: 120
+
+      - id: "final-summary"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        prompt: |
+          Generate final summary of what was done.
+
+          User choice: {{user_choice}}
+          Execution result: {{execution_result}}
+          Cleanup result: {{cleanup_result}}
+          Branch info: {{branch_info}}
+
+          Create a clear completion summary:
+
+          ======================================================================
+          BRANCH COMPLETION SUMMARY
+          ======================================================================
+
+          ## Action Taken
+          [MERGE | PR | KEEP | DISCARD]
+
+          ## Results
+          [What happened based on execution_result]
+
+          ## Current State
+          - Branch: [exists/deleted]
+          - Worktree: [exists/removed]
+          - Main branch: [updated/unchanged]
+
+          ## Next Steps
+          [Relevant next steps based on the action taken]
+
+          ======================================================================
+        output: "final_summary"
+        timeout: 120

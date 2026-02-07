@@ -1,0 +1,384 @@
+# Git Worktree Setup Workflow
+# Creates an isolated git worktree for feature development with automatic
+# project setup and baseline verification.
+#
+# Workflow:
+#   1. Check for existing .worktrees/ or worktrees/ directories
+#   2. Determine location (existing dir, check CLAUDE.md/AGENTS.md, or ask user)
+#   3. Verify gitignore for project-local directories
+#   4. Create worktree with: git worktree add <path> -b <branch-name>
+#   5. Auto-detect project type and run setup (npm install, cargo build, etc.)
+#   6. Run tests to verify clean baseline state
+#   7. Report worktree location and readiness
+#
+# IMPORTANT: Includes approval gate if baseline tests fail - you decide whether
+# to proceed with a broken baseline or stop to investigate.
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/git-worktree-setup.yaml with branch_name=feature/my-feature"
+#   amplifier run "execute superpowers:recipes/git-worktree-setup.yaml with branch_name=fix/bug-123 feature_name='Fix login bug'"
+#   amplifier run "execute superpowers:recipes/git-worktree-setup.yaml with branch_name=feature/api worktree_location=~/worktrees/project"
+#
+# After approval gate (if tests fail):
+#   amplifier run "list pending approvals"
+#   amplifier run "approve recipe session <session-id> stage baseline-verification"
+#   amplifier run "resume recipe session <session-id>"
+
+name: "git-worktree-setup"
+description: "Create an isolated git worktree for feature development with automatic project setup and baseline verification"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["git", "worktree", "feature-development", "isolation", "setup"]
+
+context:
+  branch_name: ""           # Required: Name for the feature branch (e.g., feature/my-feature)
+  feature_name: ""          # Optional: Descriptive name for the feature
+  worktree_location: ""     # Optional: Override default location detection
+
+stages:
+  # ============================================================================
+  # STAGE 1: Discovery and Preparation
+  # ============================================================================
+  - name: "discovery"
+    steps:
+      - id: "check-existing-dirs"
+        agent: "foundation:git-ops"
+        prompt: |
+          Check for existing worktree directories in the current project.
+
+          Look for these directories in the project root:
+          1. `.worktrees/` (hidden directory - preferred)
+          2. `worktrees/` (visible directory)
+
+          Also check if there's a parent-level worktrees directory (one level up from project).
+
+          Report:
+          - Which directories exist (if any)
+          - Current contents of those directories (list existing worktrees)
+          - The project root path for reference
+        output: "existing_dirs"
+        timeout: 60
+
+      - id: "determine-location"
+        agent: "foundation:git-ops"
+        prompt: |
+          Determine the best location for the new worktree.
+
+          INPUTS:
+          - Existing directories found: {{existing_dirs}}
+          - User-specified location override: {{worktree_location}}
+          - Branch name: {{branch_name}}
+          - Feature name: {{feature_name}}
+
+          DECISION ORDER (follow strictly):
+
+          1. IF worktree_location is provided and non-empty:
+             -> Use that exact path (append branch name if it's a directory)
+
+          2. ELSE IF existing .worktrees/ or worktrees/ directory found:
+             -> Use that directory as the base
+
+          3. ELSE check for location preferences in project docs:
+             -> Look for CLAUDE.md, AGENTS.md, or .github/worktree-config
+             -> Check for any documented worktree location preferences
+
+          4. ELSE default to `.worktrees/` in project root
+
+          FINAL PATH FORMAT:
+          <base_directory>/<branch_name_sanitized>
+
+          Sanitize branch name for filesystem:
+          - Replace `/` with `-` (e.g., feature/login -> feature-login)
+          - Remove any characters invalid for directory names
+
+          Report:
+          - Chosen base directory and why
+          - Full path for the new worktree
+          - Whether base directory needs to be created
+        output: "worktree_path_info"
+        timeout: 90
+
+      - id: "verify-gitignore"
+        agent: "foundation:git-ops"
+        prompt: |
+          Verify that the worktree directory will be properly git-ignored.
+
+          Worktree path info: {{worktree_path_info}}
+
+          CRITICAL: For project-local worktree directories, we MUST ensure they are
+          git-ignored to prevent accidentally committing worktree contents.
+
+          STEPS:
+
+          1. Determine if the worktree base is inside the project directory
+             (If it's outside the project, gitignore is not needed)
+
+          2. IF inside project directory:
+             a. Check if .gitignore exists
+             b. Check if the worktree base directory pattern is already ignored
+                (e.g., `.worktrees/`, `worktrees/`, or the specific path)
+             c. IF NOT ignored: ADD the pattern to .gitignore
+                - Add to end of file with a comment explaining why
+                - Use pattern like `.worktrees/` or `worktrees/`
+
+          3. Report:
+             - Whether gitignore check was needed
+             - What patterns were checked
+             - Any changes made to .gitignore
+             - Confirmation that worktree directory is safely ignored
+        output: "gitignore_status"
+        timeout: 90
+
+  # ============================================================================
+  # STAGE 2: Worktree Creation
+  # ============================================================================
+  - name: "worktree-creation"
+    steps:
+      - id: "create-worktree"
+        agent: "foundation:git-ops"
+        prompt: |
+          Create the git worktree for feature development.
+
+          INPUTS:
+          - Branch name: {{branch_name}}
+          - Worktree path info: {{worktree_path_info}}
+          - Feature description: {{feature_name}}
+
+          STEPS:
+
+          1. Create the base worktree directory if it doesn't exist
+             (e.g., mkdir -p .worktrees)
+
+          2. Create the worktree with a NEW branch:
+             ```
+             git worktree add <worktree_path> -b {{branch_name}}
+             ```
+
+          3. IF branch already exists, try without -b flag:
+             ```
+             git worktree add <worktree_path> {{branch_name}}
+             ```
+
+          4. IF that also fails (worktree already exists for branch):
+             Report the error clearly - user may need to clean up
+
+          5. Verify the worktree was created successfully:
+             - Check the directory exists
+             - Run `git worktree list` to confirm it's registered
+             - Show the current branch in the new worktree
+
+          REPORT:
+          - Full absolute path to the new worktree
+          - Branch name created/checked out
+          - Base commit the branch is starting from
+          - Output from `git worktree list`
+        output: "worktree_result"
+        timeout: 120
+
+  # ============================================================================
+  # STAGE 3: Project Setup
+  # ============================================================================
+  - name: "project-setup"
+    steps:
+      - id: "detect-project-type"
+        agent: "superpowers:implementer"
+        prompt: |
+          Detect the project type(s) in the new worktree and identify setup commands.
+
+          Worktree result: {{worktree_result}}
+
+          Change to the worktree directory and detect project type by looking for:
+
+          | File/Pattern        | Project Type | Setup Command(s)                    |
+          |---------------------|--------------|-------------------------------------|
+          | package.json        | Node.js      | npm install OR yarn install         |
+          | package-lock.json   | Node.js      | npm ci (prefer over npm install)    |
+          | yarn.lock           | Node.js      | yarn install                        |
+          | pnpm-lock.yaml      | Node.js      | pnpm install                        |
+          | Cargo.toml          | Rust         | cargo build                         |
+          | requirements.txt    | Python       | pip install -r requirements.txt     |
+          | pyproject.toml      | Python       | pip install -e . OR poetry install  |
+          | poetry.lock         | Python       | poetry install                      |
+          | go.mod              | Go           | go mod download                     |
+          | Makefile            | Make-based   | make OR make setup (if exists)      |
+          | setup.py            | Python       | pip install -e .                    |
+          | Gemfile             | Ruby         | bundle install                      |
+          | composer.json       | PHP          | composer install                    |
+
+          A project may have MULTIPLE types (e.g., Python backend + Node.js frontend).
+
+          Report:
+          - All project types detected
+          - Recommended setup commands in order
+          - Any special setup scripts found (setup.sh, bootstrap, etc.)
+        output: "project_detection"
+        timeout: 90
+
+      - id: "run-setup"
+        agent: "superpowers:implementer"
+        prompt: |
+          Run the appropriate setup commands in the new worktree.
+
+          Project detection: {{project_detection}}
+          Worktree result: {{worktree_result}}
+
+          EXECUTION:
+
+          1. Change to the worktree directory
+
+          2. Run ALL applicable setup commands in the correct order:
+             - Dependencies first (npm install, pip install, etc.)
+             - Build commands second (cargo build, make, etc.)
+             - Post-install hooks if specified
+
+          3. For EACH command:
+             - Show the command being run
+             - Capture stdout and stderr
+             - Report success or failure
+             - Continue with remaining commands even if one fails (note failures)
+
+          4. Look for and run any project-specific setup:
+             - ./setup.sh or ./bootstrap if present and executable
+             - make setup if Makefile has setup target
+             - npm run setup if package.json has setup script
+
+          REPORT:
+          - Each command run and its result (success/failure)
+          - Any warnings or errors encountered
+          - Overall setup status (all passed / some failed)
+          - Time taken for setup
+        output: "setup_result"
+        timeout: 600  # 10 minutes for potentially slow installs
+
+  # ============================================================================
+  # STAGE 4: Baseline Verification (APPROVAL GATE IF TESTS FAIL)
+  # ============================================================================
+  - name: "baseline-verification"
+    steps:
+      - id: "run-baseline-tests"
+        agent: "superpowers:implementer"
+        prompt: |
+          Run the project's test suite to verify a clean baseline state.
+
+          Worktree result: {{worktree_result}}
+          Setup result: {{setup_result}}
+
+          IMPORTANT: We need to verify the worktree starts with a GREEN baseline.
+          If tests fail here, it's NOT our fault - the main branch has issues.
+
+          STEPS:
+
+          1. Change to the worktree directory
+
+          2. Detect how to run tests:
+             | File/Pattern        | Test Command                        |
+             |---------------------|-------------------------------------|
+             | package.json        | npm test (if test script exists)    |
+             | Cargo.toml          | cargo test                          |
+             | pytest.ini          | pytest                              |
+             | tests/ directory    | pytest                              |
+             | pyproject.toml      | pytest or python -m pytest          |
+             | Makefile (test)     | make test                           |
+             | go.mod              | go test ./...                       |
+             | Gemfile             | bundle exec rspec OR rake test      |
+
+          3. Run the detected test command(s)
+
+          4. Capture complete output including:
+             - Number of tests run
+             - Number passed/failed/skipped
+             - Any error messages or stack traces
+             - Exit code
+
+          REPORT FORMAT:
+          - Test command(s) used
+          - TEST STATUS: PASSED or FAILED (make this prominent)
+          - Summary: X passed, Y failed, Z skipped
+          - If failed: First 10 failure messages (truncated if more)
+          - Total test run time
+        output: "test_results"
+        timeout: 600  # 10 minutes for test suites
+        on_error: "continue"  # Don't fail recipe if tests fail - we want to report
+
+    approval:
+      required: true
+      prompt: |
+        ======================================================================
+        BASELINE TEST VERIFICATION - HUMAN CHECKPOINT
+        ======================================================================
+
+        The baseline tests have been run in your new worktree.
+
+        Review the test results above carefully:
+
+        - If tests PASSED: Approve to complete setup - your worktree is ready!
+
+        - If tests FAILED: You have a decision to make:
+          - APPROVE: Proceed anyway (start with known broken baseline)
+          - DENY: Stop here to investigate the failures first
+
+          Note: Baseline failures mean the main branch has issues.
+          This is NOT caused by the worktree setup - the same tests
+          would fail on main branch.
+
+        ======================================================================
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 5: Completion Report
+  # ============================================================================
+  - name: "completion"
+    steps:
+      - id: "generate-report"
+        agent: "foundation:git-ops"
+        prompt: |
+          Generate a final summary report for the completed worktree setup.
+
+          INPUTS:
+          - Worktree result: {{worktree_result}}
+          - Setup result: {{setup_result}}
+          - Test results: {{test_results}}
+          - Gitignore status: {{gitignore_status}}
+          - Branch name: {{branch_name}}
+          - Feature name: {{feature_name}}
+
+          Generate a clear, formatted summary:
+
+          ## Worktree Setup Complete
+
+          ### Worktree Location
+          **Full Path:** <absolute path to worktree>
+
+          ### Branch Information
+          - **Branch Name:** {{branch_name}}
+          - **Feature:** {{feature_name}} (if provided)
+          - **Base Commit:** <commit SHA worktree started from>
+
+          ### Setup Summary
+          - Project type(s) detected: <list>
+          - Setup commands run: <list with status>
+          - Setup status: Success / Partial / Failed
+
+          ### Baseline Tests
+          - Status: Passed / Failed (proceeded anyway)
+          - Summary: X passed, Y failed
+
+          ### Quick Start Commands
+          ```bash
+          # Navigate to worktree
+          cd <absolute_path>
+
+          # Start development
+          git status
+
+          # When done, remove worktree
+          git worktree remove <absolute_path>
+          ```
+
+          ### Tips
+          - Your changes in this worktree are isolated from main
+          - Commit and push from within the worktree as normal
+          - Use `git worktree list` to see all active worktrees
+        output: "final_report"
+        timeout: 90

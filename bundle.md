@@ -26,7 +26,8 @@ skills:
 
 You have access to the Superpowers development methodology - a comprehensive framework for building software with AI assistance.
 
-@superpowers:context/superpowers-methodology.md
+@superpowers:context/philosophy.md
+@superpowers:context/instructions.md
 
 ---
 
@@ -40,18 +41,18 @@ You have access to the Superpowers development methodology - a comprehensive fra
 ## The Superpowers Workflow
 
 ```
-/brainstorm → Design Document
-     ↓
-/write-plan → Implementation Plan (bite-sized tasks)
-     ↓
-/execute-plan → Subagent-Driven Development
-     ↓
+/brainstorm -> Design Document
+     |
+/write-plan -> Implementation Plan (bite-sized tasks)
+     |
+/execute-plan -> Subagent-Driven Development
+     |
      Per Task:
      1. Implementer agent (implements + tests + commits)
      2. Spec reviewer agent (validates against spec)
      3. Code quality reviewer agent (ensures quality)
-     ↓
-Finished Branch → PR or Merge
+     |
+Finished Branch -> PR or Merge
 ```
 
 ## Available Commands
@@ -71,6 +72,18 @@ Finished Branch → PR or Merge
 | `superpowers:code-quality-reviewer` | Reviews code quality and best practices |
 | `superpowers:brainstormer` | Facilitates design refinement |
 | `superpowers:plan-writer` | Creates detailed implementation plans |
+
+## Available Recipes
+
+| Recipe | Purpose |
+|--------|---------|
+| `superpowers:recipes/brainstorming.yaml` | Refine ideas into designs (staged, approval gate) |
+| `superpowers:recipes/writing-plans.yaml` | Create TDD implementation plans (staged, approval gate) |
+| `superpowers:recipes/subagent-driven-development.yaml` | Fresh agent per task with foreach + two-stage review |
+| `superpowers:recipes/executing-plans.yaml` | Batch execution with human checkpoints |
+| `superpowers:recipes/git-worktree-setup.yaml` | Isolated worktree with project setup |
+| `superpowers:recipes/finish-branch.yaml` | Branch completion (merge/PR/keep/discard) |
+| `superpowers:recipes/superpowers-full-development-cycle.yaml` | End-to-end: idea to merged code |
 
 ## Skills Library
 

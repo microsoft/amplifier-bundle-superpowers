@@ -1,0 +1,374 @@
+# Executing Plans Workflow
+# Executes implementation plans in batches with human checkpoints between each batch.
+#
+# Workflow:
+#   1. Load and critically review the plan
+#   2. Execute tasks in batches (default: 3 tasks per batch)
+#   3. Report batch results and wait for human approval
+#   4. Apply feedback and continue to next batch or finish
+#
+# IMPORTANT: This recipe processes ONE BATCH per execution.
+# Re-run the recipe to process subsequent batches until all tasks are complete.
+#
+# Usage:
+#   amplifier run "execute superpowers:recipes/executing-plans.yaml with plan_path=docs/plan.md"
+#   amplifier run "execute superpowers:recipes/executing-plans.yaml with plan_path=docs/plan.md batch_size=5"
+#
+# After approval gate:
+#   amplifier run "list pending approvals"
+#   amplifier run "approve recipe session <session-id> stage batch-report"
+#   amplifier run "resume recipe session <session-id>"
+
+name: "executing-plans"
+description: "Execute implementation plans in batches with human approval checkpoints"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["implementation", "planning", "batched-execution", "human-in-loop"]
+
+context:
+  plan_path: ""        # Required: Path to the plan file
+  batch_size: 3        # Optional: Number of tasks per batch (default: 3)
+
+stages:
+  # ============================================================================
+  # STAGE 1: Load and Review Plan
+  # ============================================================================
+  - name: "plan-review"
+    steps:
+      - id: "load-plan"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Load and parse the implementation plan from: {{plan_path}}
+
+          Extract and return:
+          1. The complete plan content
+          2. List of all tasks with their current status (pending/in_progress/completed)
+          3. Total task count and how many remain incomplete
+          4. Any dependencies between tasks
+
+          Return the structured information so we can track progress.
+        output: "plan_data"
+        timeout: 120
+
+      - id: "critical-review"
+        agent: "superpowers:spec-reviewer"
+        prompt: |
+          Critically review this implementation plan:
+
+          {{plan_data}}
+
+          Evaluate:
+          1. Are the tasks well-defined with clear, actionable steps?
+          2. Are there any ambiguous or unclear instructions?
+          3. Are dependencies properly ordered?
+          4. Are there any BLOCKING CONCERNS that would prevent safe execution?
+             - Missing information that requires human clarification
+             - Contradictory instructions
+             - Tasks that could cause irreversible damage without more context
+             - Unclear scope or boundaries
+
+          CRITICAL: If you identify BLOCKING CONCERNS, clearly list them.
+          These will require human input before proceeding.
+
+          Provide your assessment with:
+          - Overall plan quality (ready/needs-clarification/blocked)
+          - List of any blocking concerns (empty if none)
+          - Recommendations for proceeding
+        output: "plan_review"
+        timeout: 180
+
+    approval:
+      required: true
+      prompt: |
+        PLAN REVIEW COMPLETE
+
+        Review the plan assessment above. If there are blocking concerns,
+        provide clarification before approving.
+
+        Approve to proceed with batch execution, or deny to stop and address concerns.
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 2: Execute Batch
+  # ============================================================================
+  - name: "batch-execution"
+    steps:
+      - id: "identify-batch"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          From the plan data, identify the next batch of tasks to execute.
+
+          Plan data: {{plan_data}}
+          Batch size: {{batch_size}}
+
+          Find up to {{batch_size}} tasks that:
+          1. Are NOT yet completed
+          2. Have all dependencies satisfied (dependent tasks are completed)
+          3. Are ready for implementation
+
+          Return:
+          - List of tasks to execute in this batch (with their full details/steps)
+          - Task IDs or names for tracking
+          - Any notes about task dependencies
+
+          If NO tasks remain, indicate "ALL_TASKS_COMPLETE".
+        output: "current_batch"
+        timeout: 120
+
+      - id: "execute-tasks"
+        agent: "superpowers:implementer"
+        prompt: |
+          Execute the following batch of tasks from the implementation plan.
+
+          TASKS TO EXECUTE:
+          {{current_batch}}
+
+          EXECUTION REQUIREMENTS - Follow these EXACTLY:
+
+          For EACH task in the batch:
+          1. Mark the task as "in_progress" (update the plan file if possible)
+          2. Follow EVERY step in the task EXACTLY as written
+             - Do NOT skip steps
+             - Do NOT reorder steps
+             - Do NOT add steps not in the plan
+          3. Run ALL verification steps specified for the task
+          4. Mark the task as "completed" when done
+
+          CRITICAL RULES:
+          - Follow plan steps EXACTLY - do not deviate or improvise
+          - If you encounter a blocker or unclear instruction: STOP IMMEDIATELY
+          - Do NOT guess or make assumptions about unclear requirements
+          - Report any blockers clearly rather than working around them
+
+          For each completed task, record:
+          - What was implemented (files changed, code added)
+          - Verification results (test output, linter output, etc.)
+          - Any issues encountered
+
+          If you hit a blocker, report it and stop - do not continue to next task.
+        output: "execution_results"
+        timeout: 1800  # 30 minutes for batch execution
+
+  # ============================================================================
+  # STAGE 3: Batch Report (APPROVAL GATE)
+  # ============================================================================
+  - name: "batch-report"
+    steps:
+      - id: "generate-report"
+        agent: "superpowers:code-quality-reviewer"
+        prompt: |
+          Generate a batch execution report.
+
+          EXECUTION RESULTS:
+          {{execution_results}}
+
+          ORIGINAL BATCH:
+          {{current_batch}}
+
+          Create a clear report including:
+
+          ## Batch Summary
+          - Tasks attempted: [count]
+          - Tasks completed: [count]
+          - Tasks blocked: [count]
+
+          ## Completed Tasks
+          For each completed task:
+          - Task name/ID
+          - What was implemented (brief summary)
+          - Files modified
+          - Verification status (passed/failed)
+
+          ## Verification Output
+          Include actual test/verification output for review.
+
+          ## Issues or Blockers
+          Any problems encountered that need attention.
+
+          ## Remaining Work
+          - Tasks still pending in the plan
+          - Estimated batches remaining
+
+          ## Recommendations
+          Any suggestions for the next batch or overall approach.
+        output: "batch_report"
+        timeout: 180
+
+      - id: "check-remaining"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Based on the execution results, determine the plan status.
+
+          Plan data: {{plan_data}}
+          Execution results: {{execution_results}}
+
+          Determine:
+          1. How many tasks remain incomplete?
+          2. Are there any blocked tasks that need human intervention?
+          3. Is the plan fully complete?
+
+          Return:
+          - remaining_task_count: [number]
+          - blocked_tasks: [list or empty]
+          - plan_complete: [true/false]
+          - next_action: "continue_batches" | "resolve_blockers" | "proceed_to_finish"
+        output: "plan_status"
+        timeout: 120
+
+    approval:
+      required: true
+      prompt: |
+        ======================================================================
+        BATCH EXECUTION COMPLETE - HUMAN CHECKPOINT
+        ======================================================================
+
+        Review the batch report above.
+
+        OPTIONS:
+        - APPROVE - Accept this batch and continue
+        - DENY - Stop execution to address issues
+
+        If you have feedback or adjustments needed, note them before approving.
+        The next stage will apply your feedback.
+
+        After approval, the recipe will either:
+        - Guide you to re-run for the next batch (if tasks remain)
+        - Proceed to the finishing workflow (if all tasks complete)
+        ======================================================================
+      timeout: 0
+      default: "deny"
+
+  # ============================================================================
+  # STAGE 4: Apply Feedback and Determine Next Steps
+  # ============================================================================
+  - name: "feedback-and-next"
+    steps:
+      - id: "apply-feedback"
+        agent: "superpowers:implementer"
+        prompt: |
+          Review the batch results and apply any feedback from the human review.
+
+          Batch report: {{batch_report}}
+          Plan status: {{plan_status}}
+
+          If the human reviewer provided any feedback or requested adjustments
+          during the approval process, apply those changes now.
+
+          Common adjustments:
+          - Fix minor issues noted in the review
+          - Update documentation
+          - Address small corrections
+
+          Do NOT start new tasks - only apply feedback on completed work.
+
+          Report what adjustments were made (if any).
+        output: "feedback_applied"
+        timeout: 300
+
+      - id: "next-steps"
+        agent: "superpowers:plan-writer"
+        prompt: |
+          Determine the next steps based on plan status.
+
+          Plan status: {{plan_status}}
+          Feedback applied: {{feedback_applied}}
+
+          Based on the status, provide clear guidance:
+
+          IF tasks remain (next_action = "continue_batches"):
+            Instruct the user to re-run this recipe for the next batch:
+            ```
+            Execute superpowers:recipes/executing-plans.yaml with plan_path={{plan_path}} batch_size={{batch_size}}
+            ```
+
+          IF blockers exist (next_action = "resolve_blockers"):
+            List the blockers that need human resolution.
+            The user should address these before re-running.
+
+          IF plan complete (next_action = "proceed_to_finish"):
+            Indicate that all tasks are done and we'll proceed to the finishing stage.
+
+          Be clear and actionable in your guidance.
+        output: "next_steps_guidance"
+        timeout: 120
+
+  # ============================================================================
+  # STAGE 5: Finish (only if all tasks complete)
+  # ============================================================================
+  - name: "finish"
+    steps:
+      - id: "verify-completion"
+        agent: "superpowers:implementer"
+        prompt: |
+          Verify that the implementation plan is fully complete.
+
+          Plan status: {{plan_status}}
+          Plan path: {{plan_path}}
+
+          Perform final verification:
+          1. Re-read the plan file and confirm all tasks marked complete
+          2. Run the full test suite to verify everything works together
+          3. Check for any regressions or integration issues
+
+          Report:
+          - All tasks verified complete: [yes/no]
+          - Test suite results: [pass/fail with details]
+          - Any integration issues found
+        output: "completion_verification"
+        timeout: 600
+
+      - id: "present-finish-options"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Present the finishing options for this implementation.
+
+          Completion verification: {{completion_verification}}
+          Original plan: {{plan_path}}
+
+          IF verification passed:
+            Present merge/completion options:
+
+            ## Implementation Complete
+
+            All tasks from the plan have been executed and verified.
+
+            ### Verification Summary
+            [Summary of test results and checks]
+
+            ### Next Steps - Choose One:
+
+            1. **Merge to main branch**
+               ```
+               git checkout main && git merge <branch>
+               ```
+
+            2. **Create Pull Request**
+               Ready for code review before merging.
+
+            3. **Additional Review**
+               Request additional human review of the changes.
+
+            ### Files Changed
+            [List of all files modified during implementation]
+
+          IF verification failed:
+            Explain what failed and what needs to be addressed before finishing.
+            Do NOT present merge options until issues are resolved.
+        output: "finish_options"
+        timeout: 180
+
+    approval:
+      required: true
+      prompt: |
+        ======================================================================
+        IMPLEMENTATION COMPLETE - FINAL REVIEW
+        ======================================================================
+
+        Review the completion verification and choose your next step.
+
+        Approve to finalize, or deny if issues need to be addressed first.
+        ======================================================================
+      timeout: 0
+      default: "deny"
