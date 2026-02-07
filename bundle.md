@@ -16,10 +16,10 @@ hooks:
       search_paths:
         - modes
 
-# Skills from original obra/superpowers (included as submodule)
+# Skills from original obra/superpowers (fetched and cached automatically)
 skills:
-  dirs:
-    - superpowers:skills
+  sources:
+    - git+https://github.com/obra/superpowers@main#subdirectory=skills
 ---
 
 # Superpowers Development Methodology
