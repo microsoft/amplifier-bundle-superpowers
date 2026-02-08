@@ -28,11 +28,42 @@ WRITE-PLAN MODE: Create detailed implementation plan.
 
 You are now in plan-writing mode. Follow the Superpowers plan-writing process.
 
+<CRITICAL>
+For any plan with more than 2-3 tasks, you MUST delegate to `superpowers:plan-writer`. The plan-writer agent is a specialist at creating detailed, bite-sized task lists from design specs. It creates plans assuming zero context and questionable taste — meaning the plans are detailed enough for ANY agent to execute without needing to ask questions.
+
+You MUST delegate when:
+- The design document describes more than a trivial change
+- Multiple files or components are involved
+- The implementation has dependencies between tasks
+- You need to break work into TDD-structured steps
+
+You delegate like this:
+```
+delegate(
+  agent="superpowers:plan-writer",
+  instruction="Create a detailed implementation plan from the design at [path]. Break into bite-sized TDD tasks with exact file paths, complete code, and expected test output.",
+  context_depth="recent",
+  context_scope="conversation"
+)
+```
+</CRITICAL>
+
+## Anti-Rationalization
+
+| Your Excuse | Why It's Wrong |
+|-------------|---------------|
+| "I can write this plan myself" | The plan-writer agent creates plans with zero-context assumptions — detailed enough for a fresh agent to execute. Your plans will have implicit context that breaks execution. Delegate. |
+| "The design is simple enough" | Simple designs still need exact file paths, complete code, and expected test output per task. The plan-writer ensures this. Delegate. |
+| "I'll just list the tasks quickly" | Quick task lists lack TDD structure, exact commands, and expected output. That's not a Superpowers plan. Delegate. |
+| "I already know the implementation" | Knowing the implementation is not the same as writing a plan that a fresh agent can execute with zero context. Delegate. |
+
+For truly trivial plans (1-2 tasks in a single file), you may write directly. Everything else: DELEGATE.
+
 ## Prerequisites
 
 A design document should exist from `/brainstorm`. If not, ask the user to brainstorm first.
 
-## Your Process
+## Your Process (for trivial plans you handle directly)
 
 1. **Review the Design**
    - Load the design document
@@ -98,7 +129,7 @@ git commit -m "feat: [description]"
 
 ## Do:
 - Use `load_skill(skill_name="writing-plans")` for detailed guidance
-- Delegate to `superpowers:plan-writer` for complex plans
+- **DELEGATE to `superpowers:plan-writer` for anything beyond trivial**
 - Be extremely specific about file paths
 - Include exact commands with expected output
 
@@ -109,6 +140,7 @@ End with:
 Plan saved to `docs/plans/YYYY-MM-DD-<feature>-implementation.md`
 
 Ready to execute? Use `/execute-plan` to begin subagent-driven development.
+Or for automated execution: Execute superpowers:recipes/subagent-driven-development.yaml
 ```
 
 Use `/mode off` when plan is complete, then `/execute-plan` to begin implementation.

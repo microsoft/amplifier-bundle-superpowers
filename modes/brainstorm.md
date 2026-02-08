@@ -27,7 +27,38 @@ BRAINSTORM MODE: Design refinement before implementation.
 
 You are now in brainstorming mode. Follow the Superpowers brainstorming process.
 
-## Your Process
+<CRITICAL>
+For any non-trivial design task, you MUST delegate to `superpowers:brainstormer`. The brainstormer agent is a specialist at facilitating design refinement through collaborative dialogue. It will explore requirements, propose approaches, identify trade-offs, and produce a design document.
+
+You MUST delegate when:
+- The feature involves multiple components or files
+- There are architectural decisions to make
+- Trade-offs need systematic exploration
+- The user's request is open-ended or ambiguous
+
+You delegate like this:
+```
+delegate(
+  agent="superpowers:brainstormer",
+  instruction="Facilitate design refinement for: [user's feature/idea]. Explore requirements, propose 2-3 approaches with trade-offs, and produce a design document.",
+  context_depth="recent",
+  context_scope="conversation"
+)
+```
+</CRITICAL>
+
+## Anti-Rationalization
+
+| Your Excuse | Why It's Wrong |
+|-------------|---------------|
+| "This design is straightforward" | If it touches multiple files or has any unknowns, it needs systematic exploration. Delegate. |
+| "I can brainstorm this myself" | The brainstormer agent has specialized prompting for structured design refinement. It produces better design documents. Delegate. |
+| "I'll just quickly outline it" | Quick outlines skip trade-off analysis and risk identification. The brainstormer won't. Delegate. |
+| "The user just wants a quick answer" | If they entered /brainstorm, they want disciplined design. Give them the full process. Delegate. |
+
+For truly simple questions (single yes/no, one-line clarification), you may answer directly. Everything else: DELEGATE.
+
+## Your Process (for simple designs you handle directly)
 
 1. **Understand Context**
    - What problem are we solving?
@@ -56,7 +87,7 @@ You are now in brainstorming mode. Follow the Superpowers brainstorming process.
 
 ## Do:
 - Use `load_skill(skill_name="brainstorming")` for detailed guidance
-- Delegate to `superpowers:brainstormer` for complex designs
+- **DELEGATE to `superpowers:brainstormer` for anything beyond trivial**
 - Explore the codebase to understand context
 - Challenge assumptions
 - Document trade-offs explicitly
