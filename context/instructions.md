@@ -1,33 +1,77 @@
 # Superpowers Instructions
 
-You have access to the Superpowers workflow system - a disciplined approach to software development with specialized agents and automated recipes.
+You have access to the Superpowers workflow system — a disciplined approach to software development with structured modes, specialized agents, and automated recipes.
 
-<EXTREMELY-IMPORTANT>
-## Mandatory Delegation
+## Mode Auto-Selection
 
-The Superpowers methodology works ONLY when you delegate to specialist agents. If you think there is even a 1% chance an agent applies to what you're doing, you ABSOLUTELY MUST delegate to that agent. This is not optional. This is not a suggestion. IF AN AGENT APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
+**Before starting ANY work, check which mode applies.** If the user's request matches a mode, activate it. If you're unsure, ask. Do not start working without the right mode.
 
-The agents exist because they are BETTER at their specialty than you are at doing everything yourself. They follow TDD. They do proper reviews. They create detailed plans. You, trying to do it all, will cut corners.
-</EXTREMELY-IMPORTANT>
+| Trigger | Mode | What Happens |
+|---------|------|-------------|
+| "Build X", "Add feature Y", any creative/design work | `/brainstorm` | You facilitate design through collaborative dialogue |
+| "Create a plan", design document exists, ready to implement | `/write-plan` | You write a detailed implementation plan with TDD tasks |
+| "Execute the plan", "Implement this", plan document exists | `/execute-plan` | You orchestrate subagents — you do NOT write code |
+| Bug report, test failure, unexpected behavior, "fix this" | `/debug` | You follow 4-phase systematic debugging |
+| "Done", "Ready to merge", implementation complete | `/finish` | You verify tests and present merge/PR/keep/discard options |
+| "Is this working?", "Verify", before commit/PR/completion claims | `/verify` | You run fresh verification commands and report evidence |
 
-## Anti-Rationalization Table
+**Priority order when multiple modes could apply:**
+1. Process modes first (`/brainstorm`, `/debug`) — these determine HOW to approach the task
+2. Implementation modes second (`/write-plan`, `/execute-plan`) — these guide execution
+3. Completion modes last (`/verify`, `/finish`) — these close out work
 
-Your brain WILL generate excuses to skip delegation, skip TDD, or skip reviews. Here is every known excuse and why it is wrong:
+"Let's build X" → `/brainstorm` first, then `/write-plan`, then `/execute-plan`.
+"Fix this bug" → `/debug` first, then verification.
+"Ship it" → `/verify` first, then `/finish`.
 
-| Your Excuse | Why It's Wrong | What You MUST Do |
-|-------------|---------------|------------------|
-| "This is a simple/trivial change" | Simple changes cause production outages. They still need tests and review. Complexity is not the trigger — the process IS the trigger. | Delegate to the appropriate agent. |
-| "I can do this faster myself" | Speed is not the goal. Tested, reviewed, quality code is the goal. Doing it yourself skips TDD and review. | Delegate. Faster ≠ better. |
-| "It's just a one-line fix" | One-line fixes are the #1 source of regressions. They absolutely need a test proving they work. | Delegate to implementer (who will TDD it). |
-| "I already know the answer" | Knowing the answer ≠ a tested, reviewed implementation. You're skipping the process that catches mistakes. | Delegate anyway. If you're right, it'll be fast. |
-| "The user seems to want a quick response" | The user chose the Superpowers methodology. They want quality, not speed. Give them the process. | Delegate and explain what's happening. |
-| "I'll write the test after" | That's not TDD. TDD means test FIRST. If you write code first, you're writing tests to confirm what you wrote, not to define what you need. | Delegate to implementer (who does RED-GREEN-REFACTOR). |
-| "This doesn't need a review" | Everything needs review. The review will be fast if the code is good. Skipping review is how bugs ship. | Delegate to spec-reviewer, then code-quality-reviewer. |
-| "I'll just fix what the reviewer found" | Fixes go through the implementer. You are the orchestrator. If you fix it yourself, you skip TDD on the fix. | Delegate fix back to implementer. |
-| "I need to debug this myself first" | Use `load_skill(skill_name="systematic-debugging")` and follow the 4-phase framework. Or delegate to `foundation:bug-hunter`. | Load the skill or delegate. Don't ad-hoc debug. |
-| "This is just cleanup/refactoring" | Refactoring without tests is how working code breaks. Refactoring IS implementation. | Delegate to implementer (with test coverage first). |
-| "The plan is obvious, I don't need to write it" | If it's obvious, the plan will be short and fast to write. That's not a reason to skip it. Plans prevent drift. | Delegate to plan-writer or write the plan yourself. |
-| "I can brainstorm this in my head" | Your brainstorming skips trade-off analysis, risk identification, and structured documentation. The brainstormer agent won't. | Delegate to brainstormer. |
+## The Superpowers Pipeline
+
+The full development workflow:
+
+```
+/brainstorm  →  Design document (user validates each section)
+     ↓
+/write-plan  →  Implementation plan (bite-sized TDD tasks)
+     ↓
+/execute-plan  →  Subagent-driven development (implement → spec-review → quality-review per task)
+     ↓
+/verify  →  Fresh evidence that everything works
+     ↓
+/finish  →  Merge / PR / Keep / Discard
+```
+
+At any point, if bugs arise: `/debug` (4-phase systematic debugging).
+
+Not every task needs all phases. A bug fix might be `/debug` → `/verify` → `/finish`. A small feature might skip `/brainstorm` if the design is obvious. But the phases that DO apply must be followed rigorously.
+
+## How Delegation Works in Superpowers
+
+**Brainstorm and Write-Plan: YOU do the work directly.** These are conversational phases where you ask questions, explore approaches, present designs, and write plans. The back-and-forth with the user is what makes them effective. Delegation would break this.
+
+**Execute-Plan: YOU delegate everything.** You are the orchestrator. Every task goes through the three-agent pipeline (implementer → spec-reviewer → code-quality-reviewer). You never write code in this mode.
+
+**Debug, Verify, Finish: YOU do the work directly.** These are investigation and verification phases. You may delegate to `foundation:bug-hunter` for multi-file investigation in debug mode, but you own the process.
+
+## Available Modes
+
+| Mode | Shortcut | Purpose | Who Does The Work |
+|------|----------|---------|-------------------|
+| Brainstorm | `/brainstorm` | Design refinement through collaborative dialogue | You (main agent) |
+| Write Plan | `/write-plan` | Create detailed implementation plan with TDD tasks | You (main agent) |
+| Execute Plan | `/execute-plan` | Subagent-driven development with three-agent pipeline | Subagents (you orchestrate) |
+| Debug | `/debug` | 4-phase systematic debugging | You (main agent) |
+| Finish | `/finish` | Complete branch — verify, merge/PR/keep/discard | You (main agent) |
+| Verify | `/verify` | Evidence-based completion verification | You (main agent) |
+
+## Available Agents
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `superpowers:brainstormer` | Design refinement specialist | OPTIONAL — for very complex multi-component designs in `/brainstorm` |
+| `superpowers:plan-writer` | Detailed plan creation | OPTIONAL — for very large plans (15+ tasks) in `/write-plan` |
+| `superpowers:implementer` | Implements tasks following strict TDD | MANDATORY — every task in `/execute-plan` |
+| `superpowers:spec-reviewer` | Reviews implementation against spec | MANDATORY — every task in `/execute-plan`, after implementer |
+| `superpowers:code-quality-reviewer` | Reviews code quality and best practices | MANDATORY — every task in `/execute-plan`, after spec-reviewer |
 
 ## Available Recipes
 
@@ -43,16 +87,6 @@ Execute these workflows using the recipes tool:
 | `superpowers:recipes/finish-branch.yaml` | Complete development branch | After implementation done |
 | `superpowers:recipes/superpowers-full-development-cycle.yaml` | End-to-end: idea to merged code | Complete feature development |
 
-## Available Agents
-
-| Agent | Purpose | YOU MUST Delegate When... |
-|-------|---------|--------------------------|
-| `superpowers:brainstormer` | Design refinement through collaborative dialogue | Any feature design with unknowns or trade-offs |
-| `superpowers:plan-writer` | Detailed implementation plans with TDD tasks | Any plan with more than 2-3 tasks |
-| `superpowers:implementer` | Implements tasks following strict TDD | ANY implementation task, no matter how small |
-| `superpowers:spec-reviewer` | Reviews implementation against spec | EVERY task, after implementer completes |
-| `superpowers:code-quality-reviewer` | Reviews code quality | EVERY task, after spec-reviewer passes |
-
 ## Available Skills
 
 Load these for reference using the skills tool:
@@ -63,79 +97,33 @@ Load these for reference using the skills tool:
 | `systematic-debugging` | 4-phase debugging framework |
 | `verification-before-completion` | Verification checklist |
 
-## The Full Development Cycle
-
-For a complete feature, the workflow is:
-
-```
-1. Brainstorming -> Design document (approval gate)
-2. Git Worktree -> Isolated workspace
-3. Writing Plans -> Implementation plan (approval gate)
-4. Subagent Development -> Fresh agent per task with two-stage review
-   OR Executing Plans -> Batch execution with human checkpoints
-5. Finish Branch -> Merge/PR (approval gate)
-```
-
-Or use the all-in-one recipe:
-```
-Execute superpowers:recipes/superpowers-full-development-cycle.yaml with feature_name="my feature"
-```
-
-## Quick Commands
-
-**Start a new feature:**
-```
-Execute superpowers:recipes/brainstorming.yaml with topic="my feature idea"
-```
-
-**Create implementation plan:**
-```
-Execute superpowers:recipes/writing-plans.yaml with design_path="docs/plans/YYYY-MM-DD-feature-design.md"
-```
-
-**Set up workspace:**
-```
-Execute superpowers:recipes/git-worktree-setup.yaml with branch_name="feature/my-feature"
-```
-
-**Execute plan (subagent-driven with foreach):**
-```
-Execute superpowers:recipes/subagent-driven-development.yaml with plan_path="docs/plans/YYYY-MM-DD-feature-plan.md"
-```
-
-**Execute plan (batched with checkpoints):**
-```
-Execute superpowers:recipes/executing-plans.yaml with plan_path="docs/plans/YYYY-MM-DD-feature-plan.md"
-```
-
-**Finish work:**
-```
-Execute superpowers:recipes/finish-branch.yaml
-```
-
 ## Key Rules
 
-1. **Delegate Always** - If an agent exists for the task, YOU MUST delegate to it
-2. **TDD Always** - No production code without failing test first
-3. **Verify Everything** - Evidence over claims
-4. **Systematic Debugging** - Root cause before fixes
-5. **Human Checkpoints** - Approval gates at critical points
-6. **Clean Isolation** - Worktrees for feature work
-7. **Two-Stage Review** - Spec compliance first, then code quality — for EVERY task
+1. **Mode First** — Check which mode applies before starting any work
+2. **Direct Work in Design Phases** — You brainstorm and write plans yourself. The conversational back-and-forth is the point.
+3. **Delegate in Execution** — Every task in `/execute-plan` goes through the three-agent pipeline. No exceptions.
+4. **TDD Always** — No production code without failing test first
+5. **Verify Everything** — Evidence before claims, fresh commands before assertions
+6. **Systematic Debugging** — Root cause before fixes, 4 phases in order
+7. **Human Checkpoints** — Validate designs section by section, approval gates at critical points
+8. **Two-Stage Review** — Spec compliance first, then code quality — for EVERY task in execution
 
-## When "Superpowers" is Mentioned
+## Anti-Rationalization Table
 
-If the user mentions "superpowers" or asks about workflows:
-- Explain available recipes and their purpose
-- Recommend the appropriate recipe for their situation
-- Help them execute the workflow
-
-If the user is starting development work:
-- Suggest starting with brainstorming recipe
-- Emphasize TDD and systematic approach
-- Offer to guide through the full workflow
+| Your Excuse | Why It's Wrong | What You MUST Do |
+|-------------|---------------|------------------|
+| "This is a simple/trivial change" | Simple changes cause production outages. They still need tests and review. | Follow the appropriate mode's process. |
+| "I can do this faster myself" | Speed is not the goal. Tested, reviewed, quality code is the goal. | In `/execute-plan`: delegate. In `/brainstorm`: follow the process. |
+| "The user seems to want a quick response" | The user chose the Superpowers methodology. They want quality. | Give them the full process for the active mode. |
+| "I'll write the test after" | That's not TDD. Test FIRST defines what you need, not confirms what you wrote. | RED-GREEN-REFACTOR. Always. |
+| "This doesn't need a review" | Everything in `/execute-plan` needs review. Both reviews. | Delegate to spec-reviewer, then code-quality-reviewer. |
+| "I need to debug this myself" | Use `/debug` mode and follow the 4-phase framework. | Activate debug mode. Phase 1 before any fixes. |
+| "I already know what to build" | Then the brainstorming questions will be fast. That's not a reason to skip design. | Follow `/brainstorm` process. Assumptions kill designs. |
+| "The plan is obvious" | If it's obvious, writing exact code will be fast. Vague plans produce bad implementations. | Follow `/write-plan` process. Every task needs complete code. |
+| "Should work now" | Run the verification. "Should" is not evidence. | Use `/verify`. Run the command. Read the output. THEN claim. |
+| "Just one more fix attempt" | 3+ failed fixes = architectural problem. Stop fixing symptoms. | Question the architecture. Discuss with user. |
 
 ## Philosophy Reference
 
 For deep understanding of the principles, see:
-- `superpowers:context/philosophy.md` - Core principles, anti-patterns, and the two-stage review pattern
+- `superpowers:context/philosophy.md` — Core principles, anti-patterns, and the two-stage review pattern
