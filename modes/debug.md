@@ -239,3 +239,23 @@ If you catch yourself thinking:
 - Random fixes approach: 2-3 hours of thrashing
 - First-time fix rate: 95% vs 40%
 - New bugs introduced: Near zero vs common
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering debug mode. I'll follow the 4-phase systematic debugging process: reproduce, hypothesize, test, fix. No guessing."
+
+## Transitions
+
+**Done when:** Root cause found and fix verified
+
+**Golden path:** `/verify`
+- Tell user: "Bug fixed and verified. Use `/verify` for comprehensive verification, then `/finish` to complete the branch."
+
+**Dynamic transitions:**
+- If fix reveals design flaw → suggest `/brainstorm` because the architecture needs rethinking
+- If fix needs more implementation work → suggest `/execute-plan` because new tasks should go through the pipeline
+- If multiple related bugs surface → stay in `/debug` because each bug needs its own 4-phase cycle
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

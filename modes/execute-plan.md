@@ -169,3 +169,23 @@ Next: Run full test suite, then /mode off.
 ```
 
 Use `/mode off` when execution is complete.
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering execute-plan mode. I'll orchestrate the implementation by delegating each task to specialist agents with two-stage review."
+
+## Transitions
+
+**Done when:** All tasks complete with passing reviews
+
+**Golden path:** `/verify`
+- Tell user: "All [N] tasks implemented and reviewed. Use `/verify` to confirm everything works end-to-end before completing the branch."
+
+**Dynamic transitions:**
+- If bug discovered during execution → suggest `/debug` because systematic debugging beats guessing
+- If spec is ambiguous for a task → suggest revisiting `/brainstorm` because the design needs clarification
+- If task blocked by missing prerequisite → suggest revisiting `/write-plan` because the plan needs restructuring
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

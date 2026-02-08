@@ -192,3 +192,22 @@ This is an OPTION for very large plans, not the default path.
 - Exact commands with expected output
 - DRY, YAGNI, TDD, frequent commits
 - Audience: enthusiastic junior engineer with zero context and questionable taste
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering write-plan mode to create a detailed implementation plan. I'll break the work into bite-sized TDD tasks with exact code and commands."
+
+## Transitions
+
+**Done when:** Plan saved to `docs/plans/`
+
+**Golden path:** `/execute-plan`
+- Tell user: "Plan saved to [path] with [N] tasks. Use `/execute-plan` for subagent-driven execution, or run the subagent-driven-development recipe for automated execution with approval gates."
+
+**Dynamic transitions:**
+- If design seems incomplete → suggest `/brainstorm` first because a solid design prevents plan rework
+- If plan reveals design issues → suggest `/brainstorm` to revisit because the design needs to be right before tasks are specified
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

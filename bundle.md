@@ -8,7 +8,7 @@ includes:
   - bundle: git+https://github.com/microsoft/amplifier-foundation@main
   - bundle: superpowers:behaviors/superpowers-methodology.yaml
 
-# Mode hook to discover superpowers modes (brainstorm, write-plan, execute-plan)
+# Mode hook to discover superpowers modes (brainstorm, write-plan, execute-plan, debug, verify, finish)
 hooks:
   - module: hooks-mode
     source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/hooks-mode
@@ -41,32 +41,47 @@ You have access to the Superpowers development methodology - a comprehensive fra
 ## The Superpowers Workflow
 
 ```
-/brainstorm -> Design Document
-     |
-/write-plan -> Implementation Plan (bite-sized tasks)
-     |
-/execute-plan -> Subagent-Driven Development
-     |
-     Per Task:
-     1. Implementer agent (implements + tests + commits)
-     2. Spec reviewer agent (validates against spec)
-     3. Code quality reviewer agent (ensures quality)
-     |
-Finished Branch -> PR or Merge
+/brainstorm  ->  Design Document
+      |
+/write-plan  ->  Implementation Plan (bite-sized tasks)
+      |
+/execute-plan  ->  Subagent-Driven Development
+      |               Per Task:
+      |               1. Implementer agent (implements + tests + commits)
+      |               2. Spec reviewer agent (validates against spec)
+      |               3. Code quality reviewer agent (ensures quality)
+      |
+/verify  ->  Evidence-based verification (tests, behavior, edge cases)
+      |
+/finish  ->  Branch completion (merge / PR / keep / discard)
 ```
+
+**Two tracks to the same destination:**
+
+| Track | How | Best For |
+|-------|-----|----------|
+| **Interactive modes** | `/brainstorm` → `/write-plan` → `/execute-plan` → `/verify` → `/finish` | Hands-on sessions where you want control at each step |
+| **Recipe automation** | `superpowers-full-development-cycle.yaml` | End-to-end automation with approval gates between stages |
+
+Both tracks use the same agents, the same TDD process, and the same review pipeline. Modes give you the steering wheel; recipes give you cruise control.
+
+**Off-ramp at any time:** `/debug` when something breaks. It rejoins the main flow at `/verify` after the fix.
 
 ## Available Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/brainstorm` | Start design refinement before any creative work |
-| `/write-plan` | Create detailed implementation plan from spec |
-| `/execute-plan` | Execute plan using subagent-driven development |
+| Command | Purpose | Next Step |
+|---------|---------|-----------|
+| `/brainstorm` | Refine idea into a solid design through collaborative dialogue | `/write-plan` |
+| `/write-plan` | Create detailed implementation plan with bite-sized TDD tasks | `/execute-plan` |
+| `/execute-plan` | Orchestrate implementation via subagent pipeline with two-stage review | `/verify` |
+| `/debug` | Systematic 4-phase debugging: reproduce, hypothesize, test, fix | `/verify` |
+| `/verify` | Collect fresh evidence that everything works - no claims without proof | `/finish` or `/debug` |
+| `/finish` | Verify tests, summarize work, present merge/PR/keep/discard options | Session complete |
 
 ## Available Agents
 
 | Agent | Purpose |
-|-------|---------|
+|-------|---------| 
 | `superpowers:implementer` | Implements tasks following TDD |
 | `superpowers:spec-reviewer` | Reviews code against spec compliance |
 | `superpowers:code-quality-reviewer` | Reviews code quality and best practices |
@@ -76,7 +91,7 @@ Finished Branch -> PR or Merge
 ## Available Recipes
 
 | Recipe | Purpose |
-|--------|---------|
+|--------|---------| 
 | `superpowers:recipes/brainstorming.yaml` | Refine ideas into designs (staged, approval gate) |
 | `superpowers:recipes/writing-plans.yaml` | Create TDD implementation plans (staged, approval gate) |
 | `superpowers:recipes/subagent-driven-development.yaml` | Fresh agent per task with foreach + two-stage review |

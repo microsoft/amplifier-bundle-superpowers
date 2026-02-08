@@ -171,3 +171,25 @@ When verification is complete, present results as:
 Run the command. Read the output. THEN claim the result.
 
 This is non-negotiable.
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering verify mode. I'll collect fresh evidence that everything works: tests, behavior, edge cases. No claims without proof."
+
+## Transitions
+
+**Done when:** All verification evidence collected
+
+**Golden path (pass):** `/finish`
+- Tell user: "Verification complete - all checks pass. Use `/finish` to merge, create PR, or complete the branch."
+
+**Golden path (fail):** `/debug`
+- Tell user: "Verification found issues: [list]. Use `/debug` to investigate."
+
+**Dynamic transitions:**
+- If missing tests discovered → suggest adding tests in `/execute-plan` because tests should go through the implementation pipeline
+- If missing feature discovered → suggest `/brainstorm` or `/write-plan` because new work needs design and planning
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

@@ -194,3 +194,23 @@ The recipe handles test verification, option presentation, and cleanup automatic
 - Present exactly 4 options
 - Get typed confirmation for DISCARD
 - Show what was accomplished before asking
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering finish mode. I'll verify the branch is ready, summarize the work, and present your completion options."
+
+## Transitions
+
+**Done when:** Branch merged/PR created/kept/discarded
+
+**Golden path:** Session complete
+- Tell user: "Branch completed via [chosen option]. Great work!"
+
+**Dynamic transitions:**
+- If tests failing → suggest `/verify` first because tests must pass before completion
+- If unreviewed changes exist → suggest `/verify` first because all changes need verification evidence
+- If user wants to add more work → suggest `/mode off` because open-ended work doesn't need a mode
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

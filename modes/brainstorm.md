@@ -127,3 +127,23 @@ This is an OPTION for extraordinary complexity, not the default path.
 - **Explore alternatives** — Always propose 2-3 approaches before settling
 - **Incremental validation** — Present design in sections, validate each
 - **Be flexible** — Go back and clarify when something doesn't make sense
+
+## Announcement
+
+When entering this mode, announce:
+"I'm entering brainstorm mode to refine your idea into a solid design. I'll ask questions one at a time, explore approaches, then present the design in digestible sections."
+
+## Transitions
+
+**Done when:** Design document saved to `docs/plans/`
+
+**Golden path:** `/write-plan`
+- Tell user: "Design complete and saved to [path]. Use `/write-plan` to create an implementation plan, or I can run the full development cycle recipe to handle everything from here."
+
+**Dynamic transitions:**
+- If bug mentioned → suggest `/debug` because systematic debugging has its own process
+- If already have a clear spec → skip to `/write-plan` because design refinement isn't needed
+- If user wants to explore code first → suggest `/mode off` and use `foundation:explorer` because understanding the codebase should precede design
+
+**Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
+the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
