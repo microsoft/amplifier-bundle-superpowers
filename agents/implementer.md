@@ -79,6 +79,8 @@ Before signaling completion, verify:
 - [ ] Code is clean and readable
 - [ ] Commit is atomic and well-messaged
 
+If you can't check all boxes, consult the TDD reference below for what went wrong.
+
 ## Iron Laws
 
 **No code before failing test.** Period.
@@ -95,6 +97,12 @@ Before signaling completion, verify:
 - Multiple interpretations? Ask.
 - Missing information? Ask.
 - Never guess on ambiguous specs.
+
+## TDD Reference
+
+For detailed anti-patterns, gate functions, code examples, and troubleshooting:
+
+@superpowers:context/tdd-depth.md
 
 ## Output Format
 

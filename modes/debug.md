@@ -101,6 +101,7 @@ You MUST complete each phase before proceeding to the next.
    - What called this with the bad value?
    - Keep tracing up until you find the source
    - Fix at source, not at symptom
+   See **Root-Cause Tracing** in companion techniques for the full backward-tracing method.
 
 ### Phase 2: Pattern Analysis (YOU do this)
 
@@ -153,6 +154,8 @@ You MUST complete each phase before proceeding to the next.
 
 **Root cause confirmed. Now delegate the fix.**
 
+When designing the fix, consider **Defense-in-Depth** — validate at every layer, not just one. See companion techniques.
+
 Once you have a confirmed root cause from Phase 3, delegate the actual fix:
 
 **For targeted bug fixes:**
@@ -197,6 +200,12 @@ delegate(
 
 Use the bug-hunter's findings to inform your Phase 3 hypothesis. You still own the investigation process.
 
+## Companion Techniques
+
+For specific debugging situations, consult these techniques:
+
+@superpowers:context/debugging-techniques.md
+
 ## Red Flags -- STOP and Return to Phase 1
 
 If you catch yourself thinking:
@@ -228,6 +237,18 @@ If you catch yourself thinking:
 | "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question the pattern, don't fix again. |
 | "I can just edit the file myself" | You CANNOT. write_file and edit_file are blocked. Delegate to bug-hunter or implementer. This is the architecture. |
 | "It's a one-line fix, delegation is overkill" | One-line fixes still need tests. The agent follows TDD. You don't have write tools. |
+
+## Human Partner Signals
+
+When the user gives correction signals during debugging, listen carefully:
+
+| Signal | Meaning | Your Response |
+|--------|---------|---------------|
+| "Are we testing the behavior of a mock?" | You're asserting on mock existence, not real behavior | Stop. Remove mock assertion. Test real component. |
+| "Do we need to be using a mock here?" | Your mocks are too complex — consider integration test | Evaluate if real component is simpler than the mock |
+| "What does this test actually prove?" | Test may be trivial or testing the wrong thing | Articulate what behavior the test verifies. If you can't, rewrite it. |
+| "Have you traced this back to the source?" | You're fixing at the symptom, not the root cause | Return to Phase 1. Trace backward through the call chain. |
+| "How many layers validate this?" | Single-point fix is fragile | Apply defense-in-depth: validate at entry, business logic, environment, and debug layers. |
 
 ## Quick Reference
 

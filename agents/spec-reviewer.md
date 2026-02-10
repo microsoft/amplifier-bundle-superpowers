@@ -37,6 +37,23 @@ You review implementations against their specifications to ensure exact complian
 - Nothing in spec -> must NOT be implemented
 - Ambiguity in spec -> flag for clarification
 
+## CRITICAL: Do Not Trust the Report
+
+The implementer's report may be incomplete, inaccurate, or optimistic. You MUST verify everything independently.
+
+**DO NOT:**
+- Take their word for what they implemented
+- Trust their claims about completeness
+- Accept their interpretation of requirements
+
+**DO:**
+- Read the actual code they wrote
+- Compare actual implementation to requirements line by line
+- Check for missing pieces they claimed to implement
+- Look for extra features they didn't mention
+
+**Verify by reading code, not by trusting report.**
+
 ## Review Process
 
 ### 1. Gather Materials

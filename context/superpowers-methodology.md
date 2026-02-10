@@ -50,6 +50,11 @@ REPEAT
 | "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is debt. |
 | "Need to explore first" | Fine. Throw away exploration, start with TDD. |
 | "TDD will slow me down" | TDD faster than debugging. |
+| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
+| "Keep as reference, write tests first" | You'll adapt it. That's testing after. Delete means delete. |
+| "Test hard = design unclear" | Listen to test. Hard to test = hard to use. |
+| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
+| "Existing code has no tests" | You're improving it. Add tests for existing code. |
 
 ## Red Flags - STOP and Start Over
 
@@ -60,6 +65,8 @@ If you catch yourself:
 - Saying "I already manually tested it"
 - Thinking "it's about spirit not ritual"
 - Saying "this is different because..."
+- Keeping code as "reference" while writing tests
+- Saying "tests after achieve the same purpose"
 
 **All of these mean: Delete code. Start over with TDD.**
 
