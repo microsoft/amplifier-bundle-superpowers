@@ -24,7 +24,7 @@ The recommended way to use Superpowers is to install the behavior at your app le
 
 ```bash
 # Add the superpowers methodology to your app settings (works with any bundle)
-amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml --name superpowers
+amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
 
 # Launch Amplifier (with whatever bundle you already use)
 amplifier
@@ -45,10 +45,7 @@ If you want the complete standalone experience with modes, recipes, and skills:
 
 ```bash
 # Install the full bundle
-amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main --name superpowers
-
-# Activate it (replaces your current bundle)
-amplifier bundle use superpowers
+amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main
 
 # Start a session
 amplifier
