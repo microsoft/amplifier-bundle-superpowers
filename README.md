@@ -20,11 +20,34 @@ This bundle brings full Superpowers support to [Amplifier](https://github.com/mi
 
 ## Quick Start
 
+The recommended way to use Superpowers is to install the behavior at your app level. This works with **any active bundle** - you don't need to switch away from your current setup:
+
 ```bash
-# Add the bundle
+# Add the superpowers methodology to your app settings (works with any bundle)
+amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml --name superpowers
+
+# Launch Amplifier (with whatever bundle you already use)
+amplifier
+```
+
+Or add it directly to `~/.amplifier/settings.yaml`:
+
+```yaml
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
+```
+
+This gives you the 5 specialist agents and methodology context layered on top of your existing bundle.
+
+### Alternative: Full Bundle
+
+If you want the complete standalone experience with modes, recipes, and skills:
+
+```bash
+# Install the full bundle
 amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main --name superpowers
 
-# Activate it
+# Activate it (replaces your current bundle)
 amplifier bundle use superpowers
 
 # Start a session
@@ -83,16 +106,18 @@ The original [Superpowers skills](https://github.com/obra/superpowers) are fetch
 
 Use `load_skill(search="superpowers")` to discover all available skills.
 
-## Composing Just the Methodology
+## Composing the Methodology
 
-If you want to add the Superpowers agents and methodology to your own bundle without replacing your entire configuration, include just the behavior:
+The behavior install (shown in Quick Start) is the recommended approach - it layers the Superpowers agents and methodology on top of whatever bundle you already use, without changing your providers, tools, or other configuration.
+
+You get all 5 agents (`superpowers:brainstormer`, `superpowers:plan-writer`, `superpowers:implementer`, `superpowers:spec-reviewer`, `superpowers:code-quality-reviewer`) and the methodology context.
+
+For bundle authors who want to include the methodology in their own bundle YAML:
 
 ```yaml
 includes:
   - bundle: git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
 ```
-
-This gives you the 5 agents and methodology context without changing your providers, tools, or other configuration.
 
 ## Bundle Structure
 

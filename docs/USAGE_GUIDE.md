@@ -18,52 +18,75 @@ A practical guide to using the Superpowers development methodology with Amplifie
 
 ## Getting Started
 
-### Installation
+### Recommended: Behavior Install (works with any bundle)
 
-Add and activate the bundle:
+The best way to use Superpowers is to install the behavior at your app level. This layers the methodology on top of whatever bundle you already have active - no need to switch:
 
 ```bash
-# Add the bundle from GitHub
+# Add the superpowers methodology to your app settings
+amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml --name superpowers
+```
+
+Or add it directly to `~/.amplifier/settings.yaml`:
+
+```yaml
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
+```
+
+This gives you all 5 specialist agents and the methodology context, composed on top of your existing bundle's providers, tools, and configuration.
+
+### Alternative: Full Bundle Install
+
+If you want the complete standalone experience with modes, recipes, and skills:
+
+```bash
+# Add the full bundle from GitHub
 amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-superpowers@main --name superpowers
 
-# Activate it
+# Activate it (replaces your current bundle)
 amplifier bundle use superpowers
 ```
 
 ### Verify It's Working
 
-Start a session and check that the bundle loaded correctly:
+Start a session and check that the components loaded:
 
 ```bash
 amplifier
 ```
 
-Once inside a session, verify the components:
+Once inside a session, verify:
 
 ```
-# Check modes are available
+# If using the full bundle, check modes are available
 /modes
 
-# Check skills loaded
+# Check skills loaded (full bundle only)
 load_skill(list=True)
 
 # Check a specific skill
 load_skill(search="superpowers")
 ```
 
-You should see three modes (`/brainstorm`, `/write-plan`, `/execute-plan`) and multiple skills including `test-driven-development`, `brainstorming`, `writing-plans`, and more.
+With the behavior install, you'll have the 5 agents available. With the full bundle, you'll also see three modes (`/brainstorm`, `/write-plan`, `/execute-plan`) and the skills library.
 
 ### What You Get
 
-The bundle provides:
+**Behavior install** (recommended):
 
 | Component | Count | What It Is |
 |-----------|-------|------------|
 | **Agents** | 5 | Specialized sub-agents for each workflow role |
+| **Methodology** | 1 | Core Superpowers philosophy and anti-rationalization context |
+
+**Full bundle** (adds on top of behavior):
+
+| Component | Count | What It Is |
+|-----------|-------|------------|
 | **Modes** | 3 | Workflow shortcuts that constrain tool access |
 | **Recipes** | 7 | Declarative multi-step workflows with approval gates |
 | **Skills** | 14+ | The original Superpowers skills library from [obra/superpowers](https://github.com/obra/superpowers) |
-| **Behavior** | 1 | Composable methodology for use in your own bundles |
 
 ---
 
@@ -703,7 +726,9 @@ After completion, you'll find:
 
 ## Composing Into Your Own Bundle
 
-You don't have to use the full Superpowers bundle. If you have your own bundle and just want the methodology and agents, include the behavior:
+The behavior install described in [Getting Started](#getting-started) is the recommended approach for most users - it works at the app level with any bundle.
+
+For bundle authors who want to include the methodology directly in their bundle configuration:
 
 ### Include the Behavior
 
