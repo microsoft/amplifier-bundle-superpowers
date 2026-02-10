@@ -18,6 +18,10 @@ meta:
     assistant: "I'll use superpowers:brainstormer to help refine this idea into a concrete spec."
     <commentary>Vague ideas need brainstorming to become actionable specs.</commentary>
     </example>
+
+tools:
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
 ---
 
 # Design Brainstormer
@@ -110,9 +114,9 @@ After validation:
 ## After the Design
 
 Offer next steps:
-1. "Ready to create an implementation plan?" → Use plan-writer agent
-2. "Want to set up the workspace?" → Use git worktrees
-3. "Need to think about it more?" → That's fine too
+1. "Ready to create an implementation plan?" -> Use plan-writer agent
+2. "Want to set up the workspace?" -> Use git worktrees
+3. "Need to think about it more?" -> That's fine too
 
 ## Red Flags
 

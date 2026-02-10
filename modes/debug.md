@@ -9,20 +9,29 @@ mode:
       - read_file
       - glob
       - grep
+      - load_skill
       - LSP
       - python_check
-      - bash
       - todo
       - delegate
-      - load_skill
-    warn:
-      - write_file
-      - edit_file
+      - bash
   
   default_action: block
 ---
 
 DEBUG MODE: Systematic debugging. Rigid process. No shortcuts.
+
+<CRITICAL>
+THE HYBRID PATTERN: You handle the INVESTIGATION. Agents handle the FIXES.
+
+Your role: Reproduce bugs, read error messages, trace data flow, form hypotheses, run tests, analyze evidence. You are the detective. Phases 1-3 are YOUR job -- investigation, pattern analysis, hypothesis formation.
+
+Agent's role: When it's time to WRITE FIXES (Phase 4), you MUST delegate to `foundation:bug-hunter` or `superpowers:implementer`. The agent writes the code changes. You do not modify files.
+
+This gives the best of both worlds: systematic investigation with full context (which requires YOU staying in the conversation) + focused, clean fixes with TDD (which requires a DEDICATED AGENT with write tools).
+
+You CANNOT write or edit files in this mode. write_file and edit_file are BLOCKED. bash is available for running tests, checking logs, and read-only investigation. The bug-hunter and implementer agents have their own tools for making changes.
+</CRITICAL>
 
 **Violating the letter of this process is violating the spirit of debugging.**
 
@@ -56,7 +65,7 @@ Use this ESPECIALLY when:
 
 You MUST complete each phase before proceeding to the next.
 
-### Phase 1: Reproduce and Investigate
+### Phase 1: Reproduce and Investigate (YOU do this)
 
 **BEFORE attempting ANY fix:**
 
@@ -70,7 +79,7 @@ You MUST complete each phase before proceeding to the next.
    - Can you trigger it reliably?
    - What are the exact steps?
    - Does it happen every time?
-   - If not reproducible → gather more data, don't guess
+   - If not reproducible -> gather more data, don't guess
 
 3. **Check Recent Changes**
    - What changed that could cause this?
@@ -93,7 +102,7 @@ You MUST complete each phase before proceeding to the next.
    - Keep tracing up until you find the source
    - Fix at source, not at symptom
 
-### Phase 2: Pattern Analysis
+### Phase 2: Pattern Analysis (YOU do this)
 
 **Find the pattern before fixing:**
 
@@ -103,7 +112,7 @@ You MUST complete each phase before proceeding to the next.
 
 2. **Compare Against References**
    - If implementing a pattern, read reference implementation COMPLETELY
-   - Don't skim — read every line
+   - Don't skim -- read every line
    - Understand the pattern fully before applying
 
 3. **Identify Differences**
@@ -116,7 +125,7 @@ You MUST complete each phase before proceeding to the next.
    - What settings, config, environment?
    - What assumptions does it make?
 
-### Phase 3: Hypothesis and Test
+### Phase 3: Hypothesis and Test (YOU do this)
 
 **Scientific method:**
 
@@ -125,14 +134,14 @@ You MUST complete each phase before proceeding to the next.
    - Write it down (in your response)
    - Be specific, not vague
 
-2. **Test Minimally**
-   - Make the SMALLEST possible change to test hypothesis
+2. **Design a Minimal Test**
+   - What is the SMALLEST change that would confirm or deny this hypothesis?
+   - Use bash to run tests, check output, gather evidence
    - One variable at a time
-   - Don't fix multiple things at once
 
 3. **Verify Before Continuing**
-   - Did it work? → Phase 4
-   - Didn't work? → Form NEW hypothesis, return to Phase 1 with new information
+   - Did the evidence confirm the hypothesis? -> Phase 4
+   - Didn't confirm? -> Form NEW hypothesis, return to Phase 1 with new information
    - DON'T add more fixes on top
 
 4. **When You Don't Know**
@@ -140,61 +149,55 @@ You MUST complete each phase before proceeding to the next.
    - Don't pretend to know
    - Ask for help or research more
 
-### Phase 4: Fix
+### Phase 4: Fix (DELEGATE this)
 
-**Fix the root cause, not the symptom:**
+**Root cause confirmed. Now delegate the fix.**
 
-1. **Create Failing Test Case**
-   - Simplest possible reproduction
-   - Automated test if possible
-   - MUST have before implementing fix
+Once you have a confirmed root cause from Phase 3, delegate the actual fix:
 
-2. **Implement Single Fix**
-   - Address the root cause identified in Phase 3
-   - ONE change at a time
-   - No "while I'm here" improvements
-   - No bundled refactoring
-
-3. **Verify Fix**
-   - New test passes?
-   - No other tests broken?
-   - Original issue actually resolved?
-
-4. **If Fix Doesn't Work**
-   - STOP
-   - Count: how many fixes have you tried?
-   - If < 3: return to Phase 1, re-analyze with new information
-   - If ≥ 3: STOP and question the architecture (see below)
-   - DON'T attempt fix #4 without discussion
-
-5. **If 3+ Fixes Failed: Question Architecture**
-   Pattern indicating architectural problem:
-   - Each fix reveals new shared state/coupling issues
-   - Fixes require "massive refactoring" to implement
-   - Each fix creates new symptoms elsewhere
-
-   STOP and question fundamentals:
-   - Is this pattern fundamentally sound?
-   - Should we refactor architecture vs. continue fixing symptoms?
-
-   **Discuss with the user before attempting more fixes.**
-
-## Delegation for Multi-File Investigation
-
-When the bug spans multiple files or requires deep codebase exploration, delegate the investigation:
-
+**For targeted bug fixes:**
 ```
 delegate(
   agent="foundation:bug-hunter",
-  instruction="Investigate [bug description]. Symptoms: [what you've observed]. Suspected area: [files/components]. Find the root cause — do NOT apply fixes.",
+  instruction="Fix the following confirmed bug. Root cause: [your hypothesis from Phase 3]. Evidence: [what confirmed it]. Required fix: [specific change needed]. Create a failing test that reproduces the bug, then implement the minimal fix. Files involved: [list files].",
   context_depth="recent",
   context_scope="conversation"
 )
 ```
 
-Use the bug-hunter's findings to inform your Phase 3 hypothesis. You still own the fix process.
+**For fixes that are part of a larger implementation:**
+```
+delegate(
+  agent="superpowers:implementer",
+  instruction="Implement fix for: [bug description]. Root cause: [confirmed cause]. Fix: [specific change]. Follow TDD: write failing test reproducing the bug, then minimal fix to pass. Files: [list].",
+  context_depth="recent",
+  context_scope="conversation"
+)
+```
 
-## Red Flags — STOP and Return to Phase 1
+**After the agent returns:** Verify the fix yourself using bash (run tests, reproduce the original scenario). If the fix didn't work, return to Phase 1 with the new information.
+
+**If fix doesn't work after 3 attempts:** STOP and question the architecture:
+- Is this pattern fundamentally sound?
+- Should we refactor architecture vs. continue fixing symptoms?
+- **Discuss with the user before attempting more fixes.**
+
+## Delegation for Multi-File Investigation
+
+When the bug spans multiple files or requires deep codebase exploration, you MAY delegate the investigation too:
+
+```
+delegate(
+  agent="foundation:bug-hunter",
+  instruction="Investigate [bug description]. Symptoms: [what you've observed]. Suspected area: [files/components]. Find the root cause -- do NOT apply fixes yet.",
+  context_depth="recent",
+  context_scope="conversation"
+)
+```
+
+Use the bug-hunter's findings to inform your Phase 3 hypothesis. You still own the investigation process.
+
+## Red Flags -- STOP and Return to Phase 1
 
 If you catch yourself thinking:
 - "Quick fix for now, investigate later"
@@ -221,17 +224,19 @@ If you catch yourself thinking:
 | "I'll write test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
 | "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
 | "Reference too long, I'll adapt the pattern" | Partial understanding guarantees bugs. Read it completely. |
-| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause. |
+| "I see the problem, let me fix it" | Seeing symptoms != understanding root cause. |
 | "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question the pattern, don't fix again. |
+| "I can just edit the file myself" | You CANNOT. write_file and edit_file are blocked. Delegate to bug-hunter or implementer. This is the architecture. |
+| "It's a one-line fix, delegation is overkill" | One-line fixes still need tests. The agent follows TDD. You don't have write tools. |
 
 ## Quick Reference
 
-| Phase | Key Activities | Success Criteria |
-|-------|---------------|-----------------|
-| **1. Reproduce & Investigate** | Read errors, reproduce, check changes, gather evidence | Understand WHAT and WHY |
-| **2. Pattern Analysis** | Find working examples, compare, identify differences | Know what's different |
-| **3. Hypothesis & Test** | Form theory, test minimally, one variable at a time | Confirmed root cause |
-| **4. Fix** | Create test, implement fix, verify | Bug resolved, tests pass |
+| Phase | Key Activities | Who Does It | Success Criteria |
+|-------|---------------|-------------|-----------------|
+| **1. Reproduce & Investigate** | Read errors, reproduce, check changes, gather evidence | YOU | Understand WHAT and WHERE |
+| **2. Pattern Analysis** | Find working examples, compare, identify differences | YOU | Know what's different |
+| **3. Hypothesis & Test** | Form theory, test minimally, one variable at a time | YOU | Confirmed root cause |
+| **4. Fix** | Create test, implement fix, verify | DELEGATE to agent | Bug resolved, tests pass |
 
 ## Real-World Impact
 
@@ -243,7 +248,7 @@ If you catch yourself thinking:
 ## Announcement
 
 When entering this mode, announce:
-"I'm entering debug mode. I'll follow the 4-phase systematic debugging process: reproduce, hypothesize, test, fix. No guessing."
+"I'm entering debug mode. I'll follow the 4-phase systematic debugging process: reproduce, analyze, hypothesize, then delegate the fix. I investigate, agents implement. No guessing."
 
 ## Transitions
 
@@ -253,9 +258,9 @@ When entering this mode, announce:
 - Tell user: "Bug fixed and verified. Use `/verify` for comprehensive verification, then `/finish` to complete the branch."
 
 **Dynamic transitions:**
-- If fix reveals design flaw → suggest `/brainstorm` because the architecture needs rethinking
-- If fix needs more implementation work → suggest `/execute-plan` because new tasks should go through the pipeline
-- If multiple related bugs surface → stay in `/debug` because each bug needs its own 4-phase cycle
+- If fix reveals design flaw -> suggest `/brainstorm` because the architecture needs rethinking
+- If fix needs more implementation work -> suggest `/execute-plan` because new tasks should go through the pipeline
+- If multiple related bugs surface -> stay in `/debug` because each bug needs its own 4-phase cycle
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

@@ -18,6 +18,14 @@ meta:
     assistant: "I'll use superpowers:implementer to implement this with proper RED-GREEN-REFACTOR."
     <commentary>When TDD compliance is critical, use the implementer agent.</commentary>
     </example>
+
+tools:
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-bash
+    source: git+https://github.com/microsoft/amplifier-module-tool-bash@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Task Implementer

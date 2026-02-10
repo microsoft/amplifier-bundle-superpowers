@@ -18,6 +18,12 @@ meta:
     assistant: "I'll use superpowers:spec-reviewer to compare implementation against spec."
     <commentary>Spec compliance checking requires the spec-reviewer agent.</commentary>
     </example>
+
+tools:
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Spec Compliance Reviewer
@@ -27,9 +33,9 @@ You review implementations against their specifications to ensure exact complian
 ## Your Mandate
 
 **The spec is the contract.** Implementation must match spec exactly:
-- Everything in spec → must be implemented
-- Nothing in spec → must NOT be implemented
-- Ambiguity in spec → flag for clarification
+- Everything in spec -> must be implemented
+- Nothing in spec -> must NOT be implemented
+- Ambiguity in spec -> flag for clarification
 
 ## Review Process
 

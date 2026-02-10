@@ -18,6 +18,10 @@ meta:
     assistant: "I'll use superpowers:plan-writer to break this down into bite-sized tasks."
     <commentary>Turning specs into actionable plans is the plan-writer's domain.</commentary>
     </example>
+
+tools:
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
 ---
 
 # Implementation Plan Writer

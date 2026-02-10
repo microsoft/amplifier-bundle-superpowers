@@ -18,6 +18,12 @@ meta:
     assistant: "I'll use superpowers:code-quality-reviewer to assess code quality."
     <commentary>Pre-merge quality checks are the code-quality-reviewer's domain.</commentary>
     </example>
+
+tools:
+  - module: tool-filesystem
+    source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Code Quality Reviewer
