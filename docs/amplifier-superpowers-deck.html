@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amplifier + Superpowers</title>
+<style>
+:root {
+    --accent: #FF2D55;
+    --accent-dim: rgba(255, 45, 85, 0.15);
+    --accent-glow: rgba(255, 45, 85, 0.3);
+    --bg: #000;
+    --text: #fff;
+    --text-dim: rgba(255,255,255,0.5);
+    --text-mid: rgba(255,255,255,0.7);
+    --card-bg: rgba(255,255,255,0.05);
+    --card-border: rgba(255,255,255,0.1);
+    --green: #30D158;
+    --red: #FF453A;
+    --orange: #FF9F0A;
+    --blue: #0A84FF;
+    --purple: #BF5AF2;
+    --teal: #64D2FF;
+    --yellow: #FFD60A;
+
+    --font-headline: clamp(32px, 7vw, 72px);
+    --font-medium-headline: clamp(24px, 5vw, 48px);
+    --font-subhead: clamp(16px, 3vw, 28px);
+    --font-body: clamp(14px, 2vw, 18px);
+    --font-small: clamp(12px, 1.5vw, 15px);
+    --font-big-number: clamp(48px, 15vw, 140px);
+    --padding-slide: clamp(24px, 5vw, 80px);
+    --gap-grid: clamp(16px, 2.5vw, 32px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.deck { position: relative; width: 100vw; height: 100vh; height: 100dvh; }
+
+.slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--padding-slide);
+    padding-bottom: calc(var(--padding-slide) + 40px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.slide.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Typography */
+.section-label {
+    font-size: clamp(11px, 1.4vw, 14px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: clamp(12px, 2vw, 24px);
+}
+
+.headline {
+    font-size: var(--font-headline);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    line-height: 1.08;
+    margin-bottom: clamp(16px, 3vw, 32px);
+}
+
+.headline-medium {
+    font-size: var(--font-medium-headline);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.12;
+    margin-bottom: clamp(12px, 2.5vw, 28px);
+}
+
+.subhead {
+    font-size: var(--font-subhead);
+    font-weight: 400;
+    color: var(--text-mid);
+    line-height: 1.4;
+    max-width: 700px;
+}
+
+.body-text {
+    font-size: var(--font-body);
+    color: var(--text-mid);
+    line-height: 1.6;
+    max-width: 640px;
+}
+
+.accent { color: var(--accent); }
+.green { color: var(--green); }
+.red { color: var(--red); }
+.blue { color: var(--blue); }
+.purple { color: var(--purple); }
+.teal { color: var(--teal); }
+.orange { color: var(--orange); }
+.yellow { color: var(--yellow); }
+.dim { color: var(--text-dim); }
+.mid { color: var(--text-mid); }
+.bold { font-weight: 700; }
+.mono { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; }
+
+/* Layouts */
+.center-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: var(--gap-grid);
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: var(--gap-grid);
+}
+
+.grid-5 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+    gap: var(--gap-grid);
+}
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: clamp(12px, 2vw, 16px);
+    padding: clamp(16px, 3vw, 28px);
+}
+
+.card-accent {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-glow);
+    border-radius: clamp(12px, 2vw, 16px);
+    padding: clamp(16px, 3vw, 28px);
+}
+
+.card-title {
+    font-size: clamp(15px, 2vw, 18px);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.card-desc {
+    font-size: var(--font-small);
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+/* Code blocks */
+.code-block {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: clamp(14px, 3vw, 24px);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+    font-size: clamp(12px, 1.8vw, 15px);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+/* Flow diagram */
+.flow {
+    display: flex;
+    align-items: center;
+    gap: clamp(4px, 1vw, 12px);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.flow-step {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2vw, 20px);
+    font-size: clamp(12px, 1.6vw, 16px);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.flow-arrow {
+    font-size: clamp(14px, 2vw, 20px);
+    color: var(--text-dim);
+}
+
+/* Table */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-small);
+    margin-top: 16px;
+}
+
+.comparison-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: clamp(11px, 1.4vw, 13px);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.comparison-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--text-mid);
+    line-height: 1.4;
+}
+
+.comparison-table tr:last-child td { border-bottom: none; }
+
+/* Mode table */
+.mode-row {
+    display: grid;
+    grid-template-columns: clamp(90px, 15vw, 140px) 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: clamp(8px, 1.5vw, 12px) 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: var(--font-small);
+}
+
+.mode-name {
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: clamp(12px, 1.5vw, 14px);
+}
+
+.mode-desc {
+    color: var(--text-dim);
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: clamp(10px, 1.2vw, 12px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.tag-blocked { background: rgba(255, 69, 58, 0.2); color: var(--red); }
+.tag-warn { background: rgba(255, 159, 10, 0.2); color: var(--orange); }
+.tag-safe { background: rgba(48, 209, 88, 0.2); color: var(--green); }
+
+/* Pipeline */
+.pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: clamp(8px, 1.5vw, 16px);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pipeline-stage {
+    flex: 1;
+    min-width: min(200px, 100%);
+    text-align: center;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: 12px;
+    position: relative;
+}
+
+.pipeline-num {
+    font-size: clamp(32px, 6vw, 48px);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.pipeline-title {
+    font-size: clamp(14px, 2vw, 17px);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.pipeline-desc {
+    font-size: clamp(11px, 1.3vw, 13px);
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+/* Big number */
+.big-number {
+    font-size: var(--font-big-number);
+    font-weight: 800;
+    letter-spacing: -3px;
+    line-height: 1;
+}
+
+/* Stats grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+    gap: var(--gap-grid);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: clamp(36px, 8vw, 64px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: clamp(12px, 1.5vw, 15px);
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+/* Layer cards */
+.layer-card {
+    border-radius: 12px;
+    padding: clamp(16px, 3vw, 24px);
+    position: relative;
+}
+
+.layer-num {
+    font-size: clamp(10px, 1.2vw, 12px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+}
+
+.layer-title {
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.layer-desc {
+    font-size: var(--font-small);
+    line-height: 1.5;
+}
+
+/* Navigation */
+.nav {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+}
+
+.nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    padding: 0;
+}
+
+.nav-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+}
+
+.nav-dot:hover { background: rgba(255,255,255,0.4); }
+.nav-dot.active:hover { background: var(--accent); }
+
+.slide-counter {
+    position: fixed;
+    bottom: 16px;
+    right: 24px;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+}
+
+/* Click zones */
+.click-left, .click-right {
+    position: fixed;
+    top: 0;
+    width: 25%;
+    height: 100%;
+    z-index: 50;
+    cursor: pointer;
+}
+.click-left { left: 0; }
+.click-right { right: 0; }
+
+/* Specific slide backgrounds */
+.slide-title-bg {
+    background: radial-gradient(ellipse at 50% 80%, rgba(255,45,85,0.12) 0%, transparent 60%);
+}
+
+.slide-problem-bg {
+    background: radial-gradient(ellipse at 30% 70%, rgba(255,69,58,0.08) 0%, transparent 50%);
+}
+
+.slide-solution-bg {
+    background: radial-gradient(ellipse at 70% 30%, rgba(255,45,85,0.06) 0%, transparent 50%);
+}
+
+.slide-insight-bg {
+    background: radial-gradient(ellipse at 50% 50%, rgba(255,45,85,0.10) 0%, transparent 60%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mode-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .pipeline { flex-direction: column; }
+    .flow { gap: 6px; }
+    .headline { letter-spacing: -1px; }
+}
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+<!-- ============================================ -->
+<!-- SLIDE 1: Title -->
+<!-- ============================================ -->
+<div class="slide slide-title-bg active" id="slide-1">
+    <div class="center-content" style="gap: clamp(12px, 2vw, 20px);">
+        <div class="section-label">Microsoft + Open Source</div>
+        <div class="headline" style="max-width: 900px;">Amplifier<br><span class="accent">+ Superpowers</span></div>
+        <div class="subhead" style="max-width: 600px; text-align: center;">
+            Structurally enforced disciplined development<br>for AI coding agents
+        </div>
+        <div style="margin-top: clamp(24px, 4vw, 48px); font-size: var(--font-small); color: var(--text-dim);">
+            February 2026
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 2: The Problem -->
+<!-- ============================================ -->
+<div class="slide slide-problem-bg" id="slide-2">
+    <div class="section-label">The Problem</div>
+    <div class="headline">AI agents are powerful<br>but <span class="red">undisciplined.</span></div>
+    <div class="subhead">
+        They skip design. Bypass TDD. Write code before tests. Claim "it works" without evidence. And rationalize every shortcut with confident, plausible explanations.
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 3: Failure Modes -->
+<!-- ============================================ -->
+<div class="slide" id="slide-3">
+    <div class="section-label">The Problem</div>
+    <div class="headline-medium">The five failure modes</div>
+    <div class="grid-3" style="margin-top: clamp(8px, 2vw, 16px);">
+        <div class="card">
+            <div class="card-title"><span class="red">&#x2718;</span> Skip Design</div>
+            <div class="card-desc">"Let me just start coding this up" — jumps straight to implementation without understanding requirements.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="red">&#x2718;</span> Bypass TDD</div>
+            <div class="card-desc">"I'll add tests after" — writes implementation first, then retrofits tests that pass by definition.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="red">&#x2718;</span> Claim Without Evidence</div>
+            <div class="card-desc">"This should work correctly" — asserts correctness without running a single test.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="red">&#x2718;</span> Rationalize Shortcuts</div>
+            <div class="card-desc">"In this case, a simpler approach is better" — articulate justification for cutting every corner.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="red">&#x2718;</span> Context Collapse</div>
+            <div class="card-desc">Long sessions degrade quality. The agent forgets constraints, repeats mistakes, drifts from the plan.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 4: The Punchline -->
+<!-- ============================================ -->
+<div class="slide" id="slide-4">
+    <div class="center-content">
+        <div class="headline" style="max-width: 850px;">The more capable the agent,<br>the more convincingly it <span class="red">justifies cutting corners.</span></div>
+        <div class="subhead" style="text-align: center; margin-top: 16px;">
+            Prompt engineering alone can't solve this.<br>You need structural enforcement.
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 5: What is Superpowers? -->
+<!-- ============================================ -->
+<div class="slide" id="slide-5">
+    <div class="section-label">Component One</div>
+    <div class="headline-medium">Superpowers</div>
+    <div class="subhead" style="margin-bottom: clamp(16px, 3vw, 32px);">
+        Jesse Vincent's open-source methodology for disciplined AI development.
+    </div>
+    <div class="grid-2">
+        <div>
+            <div style="font-size: var(--font-body); color: var(--text-mid); line-height: 1.7;">
+                A complete development methodology that enforces design-first, test-driven, verification-based development — with anti-rationalization safeguards baked in.
+            </div>
+            <div style="margin-top: clamp(16px, 3vw, 28px);">
+                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px;">
+                    <span class="big-number accent" style="font-size: clamp(36px, 8vw, 56px);">43k+</span>
+                    <span class="mid" style="font-size: var(--font-body);">GitHub stars</span>
+                </div>
+                <div style="font-size: var(--font-small); color: var(--text-dim);">
+                    github.com/obra/superpowers
+                </div>
+            </div>
+        </div>
+        <div class="card" style="border-color: var(--accent-glow);">
+            <div class="card-title accent">Core Principles</div>
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px; font-size: var(--font-small);">
+                <div><span class="green">&#x25CF;</span> &nbsp;Design before code</div>
+                <div><span class="green">&#x25CF;</span> &nbsp;No code without a failing test</div>
+                <div><span class="green">&#x25CF;</span> &nbsp;Fresh agent per task</div>
+                <div><span class="green">&#x25CF;</span> &nbsp;Two-stage code review</div>
+                <div><span class="green">&#x25CF;</span> &nbsp;No claims without evidence</div>
+                <div><span class="green">&#x25CF;</span> &nbsp;Anti-rationalization tables</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 6: What is Amplifier? -->
+<!-- ============================================ -->
+<div class="slide" id="slide-6">
+    <div class="section-label">Component Two</div>
+    <div class="headline-medium">Amplifier</div>
+    <div class="subhead" style="margin-bottom: clamp(16px, 3vw, 32px);">
+        Microsoft's modular AI agent framework. Linux kernel philosophy applied to AI development tooling.
+    </div>
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Tiny Kernel</div>
+            <div class="card-desc">Stable core, replaceable modules at the edges. Provider-agnostic: Anthropic, OpenAI, Azure, local models.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Bundles</div>
+            <div class="card-desc">Composable configuration packages. Agents, behaviors, modes, recipes — mix and match.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Delegate Tool</div>
+            <div class="card-desc">Multi-agent orchestration. Spawn specialist sub-agents with isolated context and focused capabilities.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Modes</div>
+            <div class="card-desc">Runtime behavior modification with tool policies. Control exactly which tools are available — and which are blocked.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Recipes</div>
+            <div class="card-desc">Declarative multi-step workflows with approval gates, checkpointing, and human-in-the-loop control.</div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span class="blue">&#x25A0;</span> &nbsp;Skills</div>
+            <div class="card-desc">Domain knowledge modules loaded on demand. Auto-fetched from upstream, always current.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 7: The Key Insight -->
+<!-- ============================================ -->
+<div class="slide slide-insight-bg" id="slide-7">
+    <div class="center-content">
+        <div class="section-label">The Innovation</div>
+        <div class="headline" style="max-width: 900px;">What if the agent literally <span class="accent">can't</span> skip the process?</div>
+        <div class="subhead" style="text-align: center; margin-top: 16px; max-width: 650px;">
+            Not "should not." Not "please don't."<br>
+            <span class="bold" style="color: #fff;">Structurally impossible.</span>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 8: Structural Enforcement -->
+<!-- ============================================ -->
+<div class="slide" id="slide-8">
+    <div class="section-label">How It Works</div>
+    <div class="headline-medium">Tool policies make it <span class="accent">structural</span></div>
+    <div class="body-text" style="margin-bottom: clamp(16px, 3vw, 28px);">
+        Amplifier's mode system controls which tools are available at each phase. During design phases, <span class="mono" style="color: var(--red);">write_file</span> and <span class="mono" style="color: var(--red);">edit_file</span> are blocked at the framework level. The agent can't rationalize past a blocked tool call.
+    </div>
+    <div class="grid-2">
+        <div class="card" style="border-color: rgba(255,69,58,0.3); background: rgba(255,69,58,0.05);">
+            <div class="card-title" style="font-family: 'SF Mono', monospace; color: var(--red);">/brainstorm</div>
+            <div class="card-desc" style="margin-top: 10px; line-height: 1.7;">
+                <span class="green">&#x2713;</span> read_file, grep, glob, web_search, delegate<br>
+                <span class="red">&#x2718;</span> <span style="color: var(--red); font-weight: 600;">write_file — BLOCKED</span><br>
+                <span class="red">&#x2718;</span> <span style="color: var(--red); font-weight: 600;">edit_file — BLOCKED</span><br>
+                <span style="color: var(--text-dim); margin-top: 6px; display: block;">Agent facilitates design conversation.<br>Delegates to brainstormer for artifacts.</span>
+            </div>
+        </div>
+        <div class="card" style="border-color: rgba(255,69,58,0.3); background: rgba(255,69,58,0.05);">
+            <div class="card-title" style="font-family: 'SF Mono', monospace; color: var(--red);">/execute-plan</div>
+            <div class="card-desc" style="margin-top: 10px; line-height: 1.7;">
+                <span class="green">&#x2713;</span> read_file, grep, glob, delegate, recipes<br>
+                <span class="red">&#x2718;</span> <span style="color: var(--red); font-weight: 600;">write_file — BLOCKED</span><br>
+                <span class="red">&#x2718;</span> <span style="color: var(--red); font-weight: 600;">edit_file — BLOCKED</span><br>
+                <span style="color: var(--text-dim); margin-top: 6px; display: block;">Agent is orchestrator only.<br>Must delegate all implementation to specialists.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 9: All 6 Modes -->
+<!-- ============================================ -->
+<div class="slide" id="slide-9">
+    <div class="section-label">The Mode System</div>
+    <div class="headline-medium">Six modes. Six sets of constraints.</div>
+    <div style="margin-top: clamp(8px, 2vw, 16px);">
+        <div class="mode-row">
+            <div class="mode-name accent">/brainstorm</div>
+            <div class="mode-desc">Socratic design exploration. Agent facilitates, delegates artifact creation.</div>
+            <div><span class="tag tag-blocked">write blocked</span></div>
+        </div>
+        <div class="mode-row">
+            <div class="mode-name accent">/write-plan</div>
+            <div class="mode-desc">Create implementation plan with bite-sized TDD tasks.</div>
+            <div><span class="tag tag-blocked">write blocked</span></div>
+        </div>
+        <div class="mode-row">
+            <div class="mode-name accent">/execute-plan</div>
+            <div class="mode-desc">Orchestrator dispatches 3-agent pipeline per task. Never writes code directly.</div>
+            <div><span class="tag tag-blocked">write blocked</span></div>
+        </div>
+        <div class="mode-row">
+            <div class="mode-name accent">/debug</div>
+            <div class="mode-desc">Investigate failures with bash. Delegates fixes to specialists.</div>
+            <div><span class="tag tag-blocked">write blocked</span> <span class="tag tag-safe" style="margin-left: 4px;">bash safe</span></div>
+        </div>
+        <div class="mode-row">
+            <div class="mode-name accent">/verify</div>
+            <div class="mode-desc">Evidence-based verification. Run tests, check behavior, confirm edge cases.</div>
+            <div><span class="tag tag-warn">write warn</span> <span class="tag tag-safe" style="margin-left: 4px;">bash safe</span></div>
+        </div>
+        <div class="mode-row" style="border-bottom: none;">
+            <div class="mode-name accent">/finish</div>
+            <div class="mode-desc">Four options: MERGE, PR, KEEP, or DISCARD. Requires passing tests for merge.</div>
+            <div><span class="tag tag-warn">write warn</span> <span class="tag tag-safe" style="margin-left: 4px;">bash safe</span></div>
+        </div>
+    </div>
+    <div style="margin-top: clamp(12px, 2vw, 20px); font-size: var(--font-small); color: var(--text-dim);">
+        All modes use <span class="mono">default_action: block</span> — unlisted tools are denied by default.
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 10: The Architecture -->
+<!-- ============================================ -->
+<div class="slide slide-solution-bg" id="slide-10">
+    <div class="section-label">Architecture</div>
+    <div class="headline-medium">The Hybrid Orchestrator Pattern</div>
+    <div class="grid-2" style="margin-top: clamp(8px, 2vw, 16px); align-items: start;">
+        <div>
+            <div class="body-text" style="margin-bottom: 20px;">
+                The main agent operates in two modes depending on the phase:
+            </div>
+            <div class="card" style="margin-bottom: var(--gap-grid); border-left: 3px solid var(--accent);">
+                <div class="card-title">Design Phases</div>
+                <div class="card-desc" style="line-height: 1.6;">
+                    Main agent handles conversation directly.<br>
+                    <span style="color: #fff;">Interactive quality</span> — Socratic questioning, iterative refinement, human dialogue.
+                </div>
+            </div>
+            <div class="card" style="border-left: 3px solid var(--green);">
+                <div class="card-title">Execution Phases</div>
+                <div class="card-desc" style="line-height: 1.6;">
+                    Main agent delegates to specialists.<br>
+                    <span style="color: #fff;">Clean context</span> — each sub-agent gets a fresh context window with just its task.
+                </div>
+            </div>
+        </div>
+        <div>
+            <div style="font-size: var(--font-small); color: var(--text-dim); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Conversation Flow</div>
+            <div class="card" style="text-align: center; padding: clamp(20px, 3vw, 32px);">
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+                    <div style="background: var(--accent-dim); border: 1px solid var(--accent-glow); border-radius: 8px; padding: 10px 20px; font-weight: 600; font-size: var(--font-small);">
+                        <span class="accent">Main Agent</span> (constrained by mode)
+                    </div>
+                    <div style="color: var(--text-dim); font-size: 18px;">&#x2193;</div>
+                    <div style="font-size: clamp(10px, 1.3vw, 12px); color: var(--text-dim);">delegates via tool call</div>
+                    <div style="color: var(--text-dim); font-size: 18px;">&#x2193;</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                        <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 8px 12px; font-size: clamp(10px, 1.3vw, 12px); font-weight: 600;">
+                            <span class="green">brainstormer</span>
+                        </div>
+                        <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 8px 12px; font-size: clamp(10px, 1.3vw, 12px); font-weight: 600;">
+                            <span class="green">plan-writer</span>
+                        </div>
+                        <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 8px 12px; font-size: clamp(10px, 1.3vw, 12px); font-weight: 600;">
+                            <span class="green">implementer</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: -4px;">
+                        <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 8px 12px; font-size: clamp(10px, 1.3vw, 12px); font-weight: 600;">
+                            <span class="green">spec-reviewer</span>
+                        </div>
+                        <div style="background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 8px 12px; font-size: clamp(10px, 1.3vw, 12px); font-weight: 600;">
+                            <span class="green">quality-reviewer</span>
+                        </div>
+                    </div>
+                    <div style="font-size: clamp(10px, 1.3vw, 12px); color: var(--text-dim); margin-top: 4px;">Specialists have write tools.<br>Main agent does not.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 11: Five Specialist Agents -->
+<!-- ============================================ -->
+<div class="slide" id="slide-11">
+    <div class="section-label">Specialist Agents</div>
+    <div class="headline-medium">Five agents. One job each.</div>
+    <div class="grid-5" style="margin-top: clamp(8px, 2vw, 16px);">
+        <div class="card" style="border-top: 3px solid var(--accent);">
+            <div style="font-size: clamp(24px, 4vw, 32px); margin-bottom: 8px;">&#x1F4A1;</div>
+            <div class="card-title">Brainstormer</div>
+            <div class="card-desc">Explores requirements through Socratic dialogue. Proposes approaches. Saves design docs.</div>
+        </div>
+        <div class="card" style="border-top: 3px solid var(--purple);">
+            <div style="font-size: clamp(24px, 4vw, 32px); margin-bottom: 8px;">&#x1F4CB;</div>
+            <div class="card-title">Plan Writer</div>
+            <div class="card-desc">Creates bite-sized TDD tasks. Assumes zero context. Each task: 2-5 minutes.</div>
+        </div>
+        <div class="card" style="border-top: 3px solid var(--green);">
+            <div style="font-size: clamp(24px, 4vw, 32px); margin-bottom: 8px;">&#x1F528;</div>
+            <div class="card-title">Implementer</div>
+            <div class="card-desc">Strict TDD: RED-GREEN-REFACTOR. Will delete code written before tests. Atomic commits.</div>
+        </div>
+        <div class="card" style="border-top: 3px solid var(--blue);">
+            <div style="font-size: clamp(24px, 4vw, 32px); margin-bottom: 8px;">&#x1F50D;</div>
+            <div class="card-title">Spec Reviewer</div>
+            <div class="card-desc">Binary verdict: APPROVED or NEEDS CHANGES. Does NOT trust the implementer's report.</div>
+        </div>
+        <div class="card" style="border-top: 3px solid var(--teal);">
+            <div style="font-size: clamp(24px, 4vw, 32px); margin-bottom: 8px;">&#x2728;</div>
+            <div class="card-title">Quality Reviewer</div>
+            <div class="card-desc">Post-compliance quality review. Clarity, error handling, security, maintainability.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 12: The Workflow -->
+<!-- ============================================ -->
+<div class="slide" id="slide-12">
+    <div class="section-label">Workflow</div>
+    <div class="headline-medium">The development flow</div>
+    <div style="margin-top: clamp(12px, 3vw, 28px);">
+        <div class="flow" style="margin-bottom: clamp(16px, 3vw, 32px);">
+            <div class="flow-step" style="border-color: var(--accent-glow); background: var(--accent-dim);">
+                <span class="accent">/brainstorm</span>
+            </div>
+            <div class="flow-arrow">&#x2192;</div>
+            <div class="flow-step" style="border-color: rgba(191,90,242,0.3); background: rgba(191,90,242,0.1);">
+                <span class="purple">/write-plan</span>
+            </div>
+            <div class="flow-arrow">&#x2192;</div>
+            <div class="flow-step" style="border-color: rgba(48,209,88,0.3); background: rgba(48,209,88,0.1);">
+                <span class="green">/execute-plan</span>
+            </div>
+            <div class="flow-arrow">&#x2192;</div>
+            <div class="flow-step" style="border-color: rgba(10,132,255,0.3); background: rgba(10,132,255,0.1);">
+                <span class="blue">/verify</span>
+            </div>
+            <div class="flow-arrow">&#x2192;</div>
+            <div class="flow-step" style="border-color: rgba(255,214,10,0.3); background: rgba(255,214,10,0.1);">
+                <span class="yellow">/finish</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin-bottom: clamp(16px, 3vw, 28px);">
+            <div style="font-size: var(--font-small); color: var(--text-dim);">
+                <span class="orange">/debug</span> available as an off-ramp at any point
+            </div>
+        </div>
+    </div>
+    <div class="grid-2" style="margin-top: 8px;">
+        <div class="card">
+            <div class="card-title">Interactive Track</div>
+            <div class="card-desc" style="line-height: 1.7; margin-top: 8px;">
+                You drive. Switch modes manually with slash commands. Full control over pacing and decisions. Best for: learning the methodology, complex features, exploratory work.
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">Recipe Track</div>
+            <div class="card-desc" style="line-height: 1.7; margin-top: 8px;">
+                Autopilot. The <span class="mono" style="font-size: 12px;">full-development-cycle</span> recipe runs all phases with approval gates. You approve at checkpoints. Best for: well-understood features, batch work.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 13: Per-Task Pipeline -->
+<!-- ============================================ -->
+<div class="slide" id="slide-13">
+    <div class="section-label">Execution</div>
+    <div class="headline-medium">Per-task: three agents, zero trust</div>
+    <div class="body-text" style="margin-bottom: clamp(16px, 3vw, 28px);">
+        Every task from the plan runs through a three-agent pipeline. Each agent gets a fresh context window. None trusts the others' claims.
+    </div>
+    <div class="pipeline">
+        <div class="pipeline-stage" style="background: rgba(48,209,88,0.08); border: 1px solid rgba(48,209,88,0.2); border-radius: 12px;">
+            <div class="pipeline-num green">1</div>
+            <div class="pipeline-title">Implementer</div>
+            <div class="pipeline-desc">
+                Writes failing test first<br>
+                Implements minimal code<br>
+                RED → GREEN → REFACTOR<br>
+                Atomic commit
+            </div>
+        </div>
+        <div style="font-size: clamp(18px, 3vw, 28px); color: var(--text-dim); align-self: center;">&#x2192;</div>
+        <div class="pipeline-stage" style="background: rgba(10,132,255,0.08); border: 1px solid rgba(10,132,255,0.2); border-radius: 12px;">
+            <div class="pipeline-num blue">2</div>
+            <div class="pipeline-title">Spec Reviewer</div>
+            <div class="pipeline-desc">
+                Reads spec independently<br>
+                Checks implementation<br>
+                Nothing missing, nothing extra<br>
+                APPROVED or FAIL
+            </div>
+        </div>
+        <div style="font-size: clamp(18px, 3vw, 28px); color: var(--text-dim); align-self: center;">&#x2192;</div>
+        <div class="pipeline-stage" style="background: rgba(100,210,255,0.08); border: 1px solid rgba(100,210,255,0.2); border-radius: 12px;">
+            <div class="pipeline-num teal">3</div>
+            <div class="pipeline-title">Quality Reviewer</div>
+            <div class="pipeline-desc">
+                Code quality assessment<br>
+                Error handling, security<br>
+                Maintainability review<br>
+                Critical / Important / Suggestion
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: clamp(12px, 2vw, 20px); font-size: var(--font-small); color: var(--text-dim);">
+        Failure at any stage &#x2192; back to implementer with specific feedback
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 14: Three Layers of Defense -->
+<!-- ============================================ -->
+<div class="slide" id="slide-14">
+    <div class="section-label">Defense In Depth</div>
+    <div class="headline-medium">Three layers of enforcement</div>
+    <div class="grid-3" style="margin-top: clamp(12px, 3vw, 24px);">
+        <div class="layer-card" style="background: rgba(255,45,85,0.08); border: 1px solid rgba(255,45,85,0.25);">
+            <div class="layer-num accent">Layer 1</div>
+            <div class="layer-title">Structural</div>
+            <div class="layer-desc mid">
+                Tool policies block write operations during design phases. The agent physically cannot call <span class="mono">write_file</span>. No amount of reasoning can bypass a blocked tool.
+            </div>
+        </div>
+        <div class="layer-card" style="background: rgba(191,90,242,0.08); border: 1px solid rgba(191,90,242,0.25);">
+            <div class="layer-num purple">Layer 2</div>
+            <div class="layer-title">Prompt</div>
+            <div class="layer-desc mid">
+                Anti-rationalization tables preemptively address every known LLM excuse. "This is a simple change" &#x2192; "Simple changes still need tests." No wiggle room in the instructions.
+            </div>
+        </div>
+        <div class="layer-card" style="background: rgba(10,132,255,0.08); border: 1px solid rgba(10,132,255,0.25);">
+            <div class="layer-num blue">Layer 3</div>
+            <div class="layer-title">Workflow</div>
+            <div class="layer-desc mid">
+                Recipes with approval gates require human sign-off before proceeding to the next phase. The full development cycle has 3 checkpoints you must approve.
+            </div>
+        </div>
+    </div>
+    <div style="margin-top: clamp(20px, 3vw, 36px); text-align: center;">
+        <div style="font-size: var(--font-body); color: var(--text-mid);">
+            Any single layer can fail. All three failing simultaneously? <span style="color: #fff; font-weight: 600;">Vanishingly unlikely.</span>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 15: Before/After Comparison -->
+<!-- ============================================ -->
+<div class="slide" id="slide-15">
+    <div class="section-label">Comparison</div>
+    <div class="headline-medium">What makes this different</div>
+    <table class="comparison-table" style="margin-top: clamp(12px, 2vw, 20px);">
+        <thead>
+            <tr>
+                <th style="width: 28%;"></th>
+                <th style="width: 36%;">Original Superpowers</th>
+                <th style="width: 36%;">Amplifier + Superpowers</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Enforcement</td>
+                <td>Prompt engineering<br><span class="dim">(agent can rationalize past it)</span></td>
+                <td><span class="green">Tool policies</span> — write tools blocked at framework level</td>
+            </tr>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Agent Isolation</td>
+                <td>Instructions say "fresh context"<br><span class="dim">(relies on agent compliance)</span></td>
+                <td><span class="green">Delegate tool</span> — actually spawns new agent with clean context</td>
+            </tr>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Human Checkpoints</td>
+                <td>Instructions say "wait for approval"<br><span class="dim">(agent may continue anyway)</span></td>
+                <td><span class="green">Approval gates</span> — recipe execution pauses until human approves</td>
+            </tr>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Phase Transitions</td>
+                <td>Agent self-manages phases<br><span class="dim">(may skip or blur phases)</span></td>
+                <td><span class="green">Mode switching</span> — explicit tool set changes per phase</td>
+            </tr>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Skills Updates</td>
+                <td>Manual copy/paste<br><span class="dim">(version drift risk)</span></td>
+                <td><span class="green">Auto-fetch</span> from upstream on bundle install</td>
+            </tr>
+            <tr>
+                <td style="color: #fff; font-weight: 600;">Composability</td>
+                <td>All-or-nothing rules file<br><span class="dim">(hard to mix with other tools)</span></td>
+                <td><span class="green">Behavior YAML</span> — include in any existing bundle</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 16: The Numbers -->
+<!-- ============================================ -->
+<div class="slide" id="slide-16">
+    <div class="section-label">By The Numbers</div>
+    <div class="headline-medium" style="text-align: center;">What ships in the bundle</div>
+    <div class="stats-grid" style="margin-top: clamp(20px, 4vw, 48px);">
+        <div>
+            <div class="stat-value accent">5</div>
+            <div class="stat-label">Specialist Agents</div>
+        </div>
+        <div>
+            <div class="stat-value purple">6</div>
+            <div class="stat-label">Modes</div>
+        </div>
+        <div>
+            <div class="stat-value green">7</div>
+            <div class="stat-label">Recipes</div>
+        </div>
+        <div>
+            <div class="stat-value blue">5</div>
+            <div class="stat-label">Context Files</div>
+        </div>
+        <div>
+            <div class="stat-value yellow">3</div>
+            <div class="stat-label">Approval Gates<br><span style="font-size: clamp(10px, 1.2vw, 12px);">(full cycle)</span></div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: clamp(24px, 4vw, 48px);">
+        <div style="font-size: var(--font-body); color: var(--text-dim);">
+            Includes a <span style="color: #fff; font-weight: 600;">full-development-cycle</span> meta-recipe that composes all workflows end-to-end.
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 17: Getting Started -->
+<!-- ============================================ -->
+<div class="slide" id="slide-17">
+    <div class="section-label">Get Started</div>
+    <div class="headline-medium">Install once. Works with any bundle.</div>
+    <div class="code-block" style="margin-top: clamp(12px, 3vw, 28px); max-width: 800px;"><span class="dim"># Install (once)</span>
+<span class="green">amplifier bundle add --app</span> <span class="dim">\</span>
+  git+https://github.com/microsoft/amplifier-bundle-superpowers@main<span class="accent">#subdirectory=behaviors/superpowers-methodology.yaml</span>
+
+<span class="dim"># Use it (any session, any bundle)</span>
+<span class="green">amplifier</span>
+
+<span class="accent">/brainstorm</span>    <span class="dim"># Design before code</span>
+<span class="accent">/write-plan</span>    <span class="dim"># Create implementation plan</span>
+<span class="accent">/execute-plan</span>  <span class="dim"># Build with subagent-driven development</span>
+<span class="accent">/debug</span>         <span class="dim"># Systematic 4-phase debugging</span>
+<span class="accent">/verify</span>        <span class="dim"># Evidence-based completion verification</span>
+<span class="accent">/finish</span>        <span class="dim"># Branch completion (merge/PR/keep/discard)</span>
+
+<span class="dim"># Or run the full automated pipeline:</span>
+<span class="mid">"run the superpowers full development cycle recipe for [feature]"</span></div>
+    <div style="margin-top: clamp(20px, 3vw, 36px);">
+        <div class="grid-2" style="max-width: 700px;">
+            <div class="card" style="padding: clamp(12px, 2vw, 20px);">
+                <div class="card-title" style="font-size: var(--font-small);">Works with any bundle</div>
+                <div class="card-desc" style="margin-top: 4px;">
+                    Installs at the app level as a behavior. Layers the 5 specialist agents and methodology on top of your existing setup. No bundle switching required.
+                </div>
+            </div>
+            <div class="card" style="padding: clamp(12px, 2vw, 20px);">
+                <div class="card-title" style="font-size: var(--font-small);">Full bundle available</div>
+                <div class="card-desc" style="margin-top: 4px;">
+                    Want modes, recipes, and skills too? Install the full bundle with <span class="mono" style="font-size: 11px;">amplifier bundle add --app ...@main</span>.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SLIDE 18: CTA -->
+<!-- ============================================ -->
+<div class="slide slide-title-bg" id="slide-18">
+    <div class="center-content" style="gap: clamp(16px, 3vw, 28px);">
+        <div class="headline" style="max-width: 800px;">Stop asking agents<br>to be disciplined.<br><span class="accent">Make it structural.</span></div>
+        <div style="margin-top: clamp(16px, 3vw, 32px); display: flex; flex-direction: column; gap: 12px; align-items: center;">
+            <div style="font-size: var(--font-body);">
+                <span class="mid">Bundle: </span>
+                <span class="mono" style="font-size: var(--font-small);">github.com/microsoft/amplifier-bundle-superpowers</span>
+            </div>
+            <div style="font-size: var(--font-body);">
+                <span class="mid">Original: </span>
+                <span class="mono" style="font-size: var(--font-small);">github.com/obra/superpowers</span>
+            </div>
+            <div style="font-size: var(--font-body);">
+                <span class="mid">Framework: </span>
+                <span class="mono" style="font-size: var(--font-small);">github.com/microsoft/amplifier</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div class="nav" id="nav"></div>
+<div class="slide-counter" id="counter"></div>
+<div class="click-left" id="click-left"></div>
+<div class="click-right" id="click-right"></div>
+
+<script>
+(function() {
+    const slides = document.querySelectorAll('.slide');
+    const nav = document.getElementById('nav');
+    const counter = document.getElementById('counter');
+    let current = 0;
+    const total = slides.length;
+
+    // Build nav dots
+    for (let i = 0; i < total; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+        dot.addEventListener('click', () => goTo(i));
+        nav.appendChild(dot);
+    }
+
+    function goTo(n) {
+        if (n < 0 || n >= total) return;
+        slides[current].classList.remove('active');
+        nav.children[current].classList.remove('active');
+        current = n;
+        slides[current].classList.add('active');
+        nav.children[current].classList.add('active');
+        counter.textContent = (current + 1) + ' / ' + total;
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+        if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+        if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+    });
+
+    // Click zones
+    document.getElementById('click-left').addEventListener('click', prev);
+    document.getElementById('click-right').addEventListener('click', next);
+
+    // Touch/swipe
+    let touchStartX = 0;
+    let touchStartY = 0;
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].screenX - touchStartX;
+        const dy = e.changedTouches[0].screenY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+            dx < 0 ? next() : prev();
+        }
+    }, { passive: true });
+
+    // Init
+    counter.textContent = '1 / ' + total;
+})();
+</script>
+
+</body>
+</html>
