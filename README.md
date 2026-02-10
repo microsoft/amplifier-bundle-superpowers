@@ -23,11 +23,28 @@ This bundle brings full Superpowers support to [Amplifier](https://github.com/mi
 The recommended way to use Superpowers is to install the behavior at your app level. This works with **any active bundle** - you don't need to switch away from your current setup:
 
 ```bash
-# Add the superpowers methodology to your app settings (works with any bundle)
+# Install (once)
 amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
 
-# Launch Amplifier (with whatever bundle you already use)
+# Use it (in any session, with any bundle)
 amplifier
+```
+
+The agent now has the Superpowers methodology and will suggest modes when appropriate. You can also activate modes directly:
+
+```
+/brainstorm    # Design before code
+/write-plan    # Create implementation plan
+/execute-plan  # Build with subagent-driven development
+/debug         # Systematic 4-phase debugging
+/verify        # Evidence-based completion verification
+/finish        # Branch completion (merge/PR/keep/discard)
+```
+
+Or run the full automated pipeline:
+
+```
+"run the superpowers full development cycle recipe for [your feature]"
 ```
 
 Or add it directly to `~/.amplifier/settings.yaml`:
@@ -44,12 +61,14 @@ This gives you the 5 specialist agents and methodology context layered on top of
 If you want the complete standalone experience with modes, recipes, and skills:
 
 ```bash
-# Install the full bundle
+# Install (once)
 amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main
 
-# Start a session
+# Use it
 amplifier
 ```
+
+Same usage as above — modes and recipes are included directly in the bundle.
 
 ## The Workflow
 

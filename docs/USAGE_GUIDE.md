@@ -23,7 +23,7 @@ A practical guide to using the Superpowers development methodology with Amplifie
 The best way to use Superpowers is to install the behavior at your app level. This layers the methodology on top of whatever bundle you already have active - no need to switch:
 
 ```bash
-# Add the superpowers methodology to your app settings
+# Install (once)
 amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=behaviors/superpowers-methodology.yaml
 ```
 
@@ -41,22 +41,41 @@ This gives you all 5 specialist agents and the methodology context, composed on 
 If you want the complete standalone experience with modes, recipes, and skills:
 
 ```bash
-# Add the full bundle from GitHub
+# Install (once)
 amplifier bundle add --app git+https://github.com/microsoft/amplifier-bundle-superpowers@main
 ```
 
-### Verify It's Working
+### What You Can Do Immediately
 
-Start a session and check that the components loaded:
+Start a session and start using it right away:
 
 ```bash
 amplifier
 ```
 
-Once inside a session, verify:
+The agent now has the Superpowers methodology and will suggest modes when appropriate. You can also activate modes directly:
 
 ```
-# If using the full bundle, check modes are available
+/brainstorm    # Design before code
+/write-plan    # Create implementation plan
+/execute-plan  # Build with subagent-driven development
+/debug         # Systematic 4-phase debugging
+/verify        # Evidence-based completion verification
+/finish        # Branch completion (merge/PR/keep/discard)
+```
+
+Or run the full automated pipeline:
+
+```
+"run the superpowers full development cycle recipe for [your feature]"
+```
+
+### Verify Components Loaded
+
+To confirm everything is available, check inside a session:
+
+```
+# Check modes are available (full bundle only)
 /modes
 
 # Check skills loaded (full bundle only)
@@ -66,7 +85,7 @@ load_skill(list=True)
 load_skill(search="superpowers")
 ```
 
-With the behavior install, you'll have the 5 agents available. With the full bundle, you'll also see three modes (`/brainstorm`, `/write-plan`, `/execute-plan`) and the skills library.
+With the behavior install, you'll have the 5 agents available. With the full bundle, you'll also see six modes (`/brainstorm`, `/write-plan`, `/execute-plan`, `/debug`, `/verify`, `/finish`) and the skills library.
 
 ### What You Get
 
