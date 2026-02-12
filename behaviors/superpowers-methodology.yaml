@@ -32,3 +32,6 @@ bundle:
     include:
       - superpowers:context/philosophy.md
       - superpowers:context/instructions.md
+      - superpowers:context/using-superpowers-amplifier.md
+      - superpowers:context/code-review-reception.md
+      - superpowers:context/parallel-dispatch.md
