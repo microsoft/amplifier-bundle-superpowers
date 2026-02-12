@@ -14,7 +14,14 @@ hooks:
     source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/hooks-mode
     config:
       search_paths:
-        - modes
+        - "@superpowers:modes"
+
+# Mode tool for programmatic mode transitions (agents can request mode changes)
+tools:
+  - module: tool-mode
+    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/tool-mode
+    config:
+      gate_policy: "warn"
 
 # Skills from original obra/superpowers (fetched and cached automatically)
 skills:

@@ -147,9 +147,10 @@ When entering this mode, announce:
 
 **Golden path:** `/write-plan`
 - Tell user: "Design complete and saved to [path]. Use `/write-plan` to create an implementation plan, or I can run the full development cycle recipe to handle everything from here."
+- Use the `mode` tool to request transitioning to write-plan mode, or suggest the user type `/mode write-plan`.
 
 **Dynamic transitions:**
-- If bug mentioned -> suggest `/debug` because systematic debugging has its own process
+- If bug mentioned -> use the `mode` tool to request transitioning to debug mode, or suggest the user type `/mode debug`, because systematic debugging has its own process
 - If already have a clear spec -> skip to `/write-plan` because design refinement isn't needed
 - If user wants to explore code first -> suggest `/mode off` and use `foundation:explorer` because understanding the codebase should precede design
 
