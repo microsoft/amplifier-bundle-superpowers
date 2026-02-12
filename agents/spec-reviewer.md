@@ -22,8 +22,11 @@ meta:
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-bash
+    source: git+https://github.com/microsoft/amplifier-module-tool-bash@main
   - module: tool-search
     source: git+https://github.com/microsoft/amplifier-module-tool-search@main
+  - python_check
 ---
 
 # Spec Compliance Reviewer
@@ -53,6 +56,12 @@ The implementer's report may be incomplete, inaccurate, or optimistic. You MUST 
 - Look for extra features they didn't mention
 
 **Verify by reading code, not by trusting report.**
+
+## CRITICAL: Run the Tests Yourself
+
+Run the project's test suite using the appropriate command (e.g., `pytest`, `npm test`, `cargo test`). Read the FULL output. Verify all tests pass with zero failures before rendering your verdict. Do NOT trust the implementer's claim that tests pass — verify independently.
+
+For Python projects, also run `python_check` to verify code quality (linting, formatting, type checking).
 
 ## Review Process
 
