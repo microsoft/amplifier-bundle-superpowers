@@ -1,3 +1,30 @@
+# THE RULE
+
+Before ANY response or action: check if a mode or skill applies. Even a 1% chance means you MUST check FIRST.
+
+In Amplifier: Use `load_skill()` to check for relevant skills. Use `/mode` commands (or the `mode` tool if available) to enter the appropriate workflow phase.
+
+## Skill Priority
+1. Process skills FIRST (brainstorming, debugging, verification) — they determine HOW to approach
+2. Implementation skills SECOND — they guide execution
+
+## Red Flags — If You Catch Yourself Thinking Any of These, STOP
+
+| Thought | Reality |
+|---------|---------|
+| "This is just a simple question" | Simple questions often need process. Check skills FIRST. |
+| "I already know what skill to use" | Knowing ≠ using. Load the skill. Follow it. |
+| "I need more context before checking skills" | Skill check comes BEFORE gathering context. |
+| "This doesn't match any skill" | You haven't checked. Load the skill list. |
+| "I'll check skills after I start" | BEFORE, not after. The Rule is not optional. |
+| "The user seems to be in a hurry" | Rushing is when process matters MOST. |
+| "I checked skills last time, same topic" | Check EVERY time. Context changes. |
+| "This is a follow-up, skills don't apply" | Follow-ups need skills too. Check. |
+| "I know what that skill says" | Knowing the concept ≠ following the skill. Load it. |
+| "Skills are for complex tasks" | ALL tasks. The Rule has no complexity threshold. |
+| "I'll adapt the skill mentally" | Don't adapt. Load and follow. |
+| "Checking skills will slow things down" | Skipping skills causes rework. Checking is faster. |
+
 # Superpowers Instructions
 
 <STANDING-ORDER>
