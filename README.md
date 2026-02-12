@@ -159,7 +159,8 @@ amplifier-bundle-superpowers/
 │   ├── verify.md                          # /verify mode
 │   └── finish.md                          # /finish mode
 ├── context/
-│   └── superpowers-methodology.md         # Core methodology
+│   ├── philosophy.md                      # WHY — principles, values, tenets
+│   └── instructions.md                    # HOW — standing orders, reference tables
 └── recipes/
     └── subagent-driven-development.yaml   # Workflow recipe
 ```

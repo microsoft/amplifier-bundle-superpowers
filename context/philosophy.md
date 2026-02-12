@@ -8,6 +8,18 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 If you didn't watch the test fail, you don't know if it tests the right thing. Code written before tests must be deleted - no exceptions, no "keeping as reference."
 
+The cycle:
+
+```
+RED: Write failing test
+  → Verify it fails for the right reason
+GREEN: Write minimal code to pass
+  → Verify all tests pass
+REFACTOR: Clean up
+  → Stay green
+REPEAT
+```
+
 ### 2. Systematic Over Ad-Hoc
 
 Random fixes waste time and create new bugs. Quick patches mask underlying issues.
@@ -82,6 +94,10 @@ Both stages must pass before moving to next task. Order matters - spec complianc
 - **Working on main** instead of feature branches
 - **Claiming success** without verification evidence
 - **Rationalizing shortcuts** ("just this once", "too simple to test")
+- **Test passes on first run** — you didn't verify it tests the right thing
+- **Keeping code as "reference"** while writing tests after the fact
+- **"This is different because..."** — it's not different
+- **"It's about the spirit, not the ritual"** — the ritual IS the spirit
 
 ## Philosophy in Practice
 
@@ -89,12 +105,19 @@ When you catch yourself thinking any of these, STOP:
 
 | Thought | Action |
 |---------|--------|
-| "This is too simple to need a test" | Write the test anyway |
-| "I'll add tests later" | Write them now or delete the code |
+| "This is too simple to need a test" | Write the test anyway. Simple code breaks. Test takes 30 seconds. |
+| "I'll add tests later" | Write them now or delete the code. Tests passing immediately prove nothing. |
 | "Quick fix, then investigate" | Investigate first |
 | "It should work now" | Verify with evidence |
 | "Just one more try" (after 2 failures) | Question the architecture |
 | "I know what the problem is" | Prove it with evidence |
+| "I already manually tested it" | Ad-hoc ≠ systematic. No record, can't re-run. |
+| "Deleting working code is wasteful" | Sunk cost fallacy. Keeping unverified code is debt. |
+| "Need to explore first" | Fine. Throw away exploration, then start with TDD. |
+| "TDD will slow me down" | TDD is faster than debugging. |
+| "Tests after achieve the same thing" | Tests-first = "what should this do?" Tests-after = "what does this do?" |
+| "I'll keep it as reference" | You'll adapt it. That's testing after. Delete means delete. |
+| "Test is hard to write" | Hard to test = hard to use. Listen to the test. |
 
 ## The Goal
 
