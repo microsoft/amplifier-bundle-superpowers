@@ -2,7 +2,7 @@
 meta:
   name: plan-writer
   description: |
-    Implementation plan writer that creates detailed, bite-sized task lists from design specs. Use after brainstorming is complete and a design document exists. Creates plans assuming zero context and questionable taste.
+    Use when you have a validated design document and need an implementation plan
 
     Examples:
     <example>

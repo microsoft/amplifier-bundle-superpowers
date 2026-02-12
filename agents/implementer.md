@@ -2,7 +2,7 @@
 meta:
   name: implementer
   description: |
-    Task implementation agent that follows TDD strictly. Use when executing a single task from an implementation plan. The implementer writes failing tests first, implements minimal code to pass, commits atomically, and performs self-review before handoff.
+    Use when executing a single task from an implementation plan
 
     Examples:
     <example>

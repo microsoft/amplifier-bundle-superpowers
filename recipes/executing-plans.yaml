@@ -141,6 +141,14 @@ stages:
           - Do NOT guess or make assumptions about unclear requirements
           - Report any blockers clearly rather than working around them
 
+          PER-TASK REVIEW (mandatory for each task):
+          After implementing each task, perform self-review:
+          1. SPEC CHECK: Does implementation match spec exactly? Nothing missing? Nothing extra?
+          2. QUALITY CHECK: Clean code? DRY? Proper error handling? Tests meaningful?
+          3. RUN TESTS: Execute full test suite, read output, verify all pass
+          4. If any check fails: fix the issue BEFORE moving to next task
+          5. Only mark task complete when it passes spec + quality + tests
+
           For each completed task, record:
           - What was implemented (files changed, code added)
           - Verification results (test output, linter output, etc.)

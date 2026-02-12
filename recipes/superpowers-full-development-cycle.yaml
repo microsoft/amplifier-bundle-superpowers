@@ -264,31 +264,34 @@ stages:
           cat "{{project_path}}/{{paths.plan_path}}"
         output: "plan_doc"
 
-      # Execute the plan with TDD using the implementer agent
+      # Execute the plan using the three-agent pipeline per task
       - id: "execute-plan"
         agent: "superpowers:implementer"
         prompt: |
-          Execute the implementation plan using strict TDD.
+          Execute the implementation plan using strict TDD with the three-agent per-task review pipeline.
           
           Plan:
           {{plan_doc}}
           
           Worktree: {{project_path}}/worktrees/{{paths.feature_slug}}
           
-          For EACH task in the plan:
-          1. Write the test FIRST - watch it fail
-          2. Write minimal code to pass the test
-          3. Refactor if needed (keep tests green)
-          4. Verify all tests still pass
-          5. Mark task complete
+          For EACH task in the plan, follow this exact sequence:
+          1. Implement the task following TDD (write failing test first, minimal code to pass)
+          2. Run the full test suite and verify all tests pass
+          3. Commit the changes
+          4. Self-review: verify spec compliance (nothing missing, nothing extra)
+          5. Self-review: verify code quality (clean code, DRY, proper error handling)
+          6. If any issues found in review, fix them and re-verify
+          7. Only proceed to next task when current task passes both reviews
           
-          IMPORTANT:
+          CRITICAL:
           - Work in the worktree directory, not the main project
           - Follow TDD strictly - no code without failing test first
-          - Run tests after each task
+          - Each task must be FULLY reviewed before starting the next
+          - Run tests after EVERY change
           - Stop and report if tests fail unexpectedly
           
-          Report progress as you complete each task.
+          Report per-task results including: implementation, spec compliance status, quality status.
         output: "implementation_result"
         on_error: "continue"
 

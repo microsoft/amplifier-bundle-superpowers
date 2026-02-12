@@ -208,8 +208,8 @@ When entering this mode, announce:
 - Tell user: "Branch completed via [chosen option]. Great work!"
 
 **Dynamic transitions:**
-- If tests failing → suggest `/verify` first because tests must pass before completion
-- If unreviewed changes exist → suggest `/verify` first because all changes need verification evidence
+- If tests failing → use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`, because tests must pass before completion
+- If unreviewed changes exist → use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`, because all changes need verification evidence
 - If user wants to add more work → suggest `/mode off` because open-ended work doesn't need a mode
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),

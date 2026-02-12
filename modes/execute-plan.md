@@ -181,9 +181,10 @@ When entering this mode, announce:
 
 **Golden path:** `/verify`
 - Tell user: "All [N] tasks implemented and reviewed. Use `/verify` to confirm everything works end-to-end before completing the branch."
+- Use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`.
 
 **Dynamic transitions:**
-- If bug discovered during execution → suggest `/debug` because systematic debugging beats guessing
+- If bug discovered during execution → use the `mode` tool to request transitioning to debug mode, or suggest the user type `/mode debug`, because systematic debugging beats guessing
 - If spec is ambiguous for a task → suggest revisiting `/brainstorm` because the design needs clarification
 - If task blocked by missing prerequisite → suggest revisiting `/write-plan` because the plan needs restructuring
 

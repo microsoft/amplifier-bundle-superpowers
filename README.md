@@ -14,7 +14,7 @@ This bundle brings full Superpowers support to [Amplifier](https://github.com/mi
 
 - **The complete Superpowers skills library** - All 14 original skills, loaded via Amplifier's skills system
 - **5 specialized agents** - Amplifier-native agents for brainstorming, planning, implementation, and two-stage review
-- **3 workflow modes** - `/brainstorm`, `/write-plan`, `/execute-plan` as Amplifier mode shortcuts
+- **6 workflow modes** - `/brainstorm`, `/write-plan`, `/execute-plan`, `/debug`, `/verify`, `/finish` as Amplifier mode shortcuts
 - **Subagent-driven development recipe** - The core execution workflow as a declarative Amplifier recipe
 - **Composable behavior** - Include just the methodology in your own bundles
 
@@ -89,13 +89,16 @@ Finished → PR or Merge
 
 ## Modes
 
-The bundle provides three workflow modes:
+The bundle provides six workflow modes:
 
 | Mode | Shortcut | Purpose |
 |------|----------|---------|
 | `brainstorm` | `/brainstorm` | Design refinement - explore approaches and trade-offs |
 | `write-plan` | `/write-plan` | Create detailed implementation plan with TDD tasks |
 | `execute-plan` | `/execute-plan` | Execute plan with subagent-driven development |
+| `debug` | `/debug` | Systematic debugging with investigation-before-fixes discipline |
+| `verify` | `/verify` | Verification and evidence-gathering before completion claims |
+| `finish` | `/finish` | Branch completion with merge/PR/keep/discard options |
 
 Use `/modes` to list all available modes, `/mode off` to exit a mode.
 
@@ -151,9 +154,13 @@ amplifier-bundle-superpowers/
 ├── modes/
 │   ├── brainstorm.md                      # /brainstorm mode
 │   ├── write-plan.md                      # /write-plan mode
-│   └── execute-plan.md                    # /execute-plan mode
+│   ├── execute-plan.md                    # /execute-plan mode
+│   ├── debug.md                           # /debug mode
+│   ├── verify.md                          # /verify mode
+│   └── finish.md                          # /finish mode
 ├── context/
-│   └── superpowers-methodology.md         # Core methodology
+│   ├── philosophy.md                      # WHY — principles, values, tenets
+│   └── instructions.md                    # HOW — standing orders, reference tables
 └── recipes/
     └── subagent-driven-development.yaml   # Workflow recipe
 ```

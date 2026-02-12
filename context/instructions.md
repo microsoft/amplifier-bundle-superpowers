@@ -1,3 +1,30 @@
+# THE RULE
+
+Before ANY response or action: check if a mode or skill applies. Even a 1% chance means you MUST check FIRST.
+
+In Amplifier: Use `load_skill()` to check for relevant skills. Use `/mode` commands (or the `mode` tool if available) to enter the appropriate workflow phase.
+
+## Skill Priority
+1. Process skills FIRST (brainstorming, debugging, verification) — they determine HOW to approach
+2. Implementation skills SECOND — they guide execution
+
+## Red Flags — If You Catch Yourself Thinking Any of These, STOP
+
+| Thought | Reality |
+|---------|---------|
+| "This is just a simple question" | Simple questions often need process. Check skills FIRST. |
+| "I already know what skill to use" | Knowing ≠ using. Load the skill. Follow it. |
+| "I need more context before checking skills" | Skill check comes BEFORE gathering context. |
+| "This doesn't match any skill" | You haven't checked. Load the skill list. |
+| "I'll check skills after I start" | BEFORE, not after. The Rule is not optional. |
+| "The user seems to be in a hurry" | Rushing is when process matters MOST. |
+| "I checked skills last time, same topic" | Check EVERY time. Context changes. |
+| "This is a follow-up, skills don't apply" | Follow-ups need skills too. Check. |
+| "I know what that skill says" | Knowing the concept ≠ following the skill. Load it. |
+| "Skills are for complex tasks" | ALL tasks. The Rule has no complexity threshold. |
+| "I'll adapt the skill mentally" | Don't adapt. Load and follow. |
+| "Checking skills will slow things down" | Skipping skills causes rework. Checking is faster. |
+
 # Superpowers Instructions
 
 <STANDING-ORDER>
@@ -66,6 +93,13 @@ Not every task needs the full pipeline. Match the approach to the task. This pre
 
 Don't suggest `/brainstorm` for a typo fix. Don't skip `/debug` for a real bug. Use judgment on scale, but when in doubt, suggest the mode.
 
+**Bite-sized task granularity** — Each task in a plan should be 2-5 minutes:
+- "Write the failing test" — one step
+- "Run it to make sure it fails" — one step
+- "Implement the minimal code" — one step
+- "Run tests and verify pass" — one step
+- "Commit" — one step
+
 ---
 
 ## Reference: The Superpowers Pipeline
@@ -90,6 +124,10 @@ At any point, if bugs arise: `/debug` (4-phase systematic debugging).
 1. Process modes first (`/brainstorm`, `/debug`) -- determine HOW to approach the task
 2. Implementation modes second (`/write-plan`, `/execute-plan`) -- guide execution
 3. Completion modes last (`/verify`, `/finish`) -- close out work
+
+## Reference: Mode Tool
+
+The `mode` tool allows programmatic mode transitions. Use `mode(operation="set", name="write-plan")` to request a mode change. The first request will be blocked with a reminder — call again to confirm. This is useful when agents need to request transitions during automated workflows.
 
 ## Reference: Modes
 
@@ -116,6 +154,12 @@ At any point, if bugs arise: `/debug` (4-phase systematic debugging).
 - **Brainstorm and Write-Plan: YOU do the work directly.** These are conversational phases. The back-and-forth with the user is what makes them effective. Delegation would break this.
 - **Execute-Plan: YOU delegate everything.** You are the orchestrator. Every task goes through the three-agent pipeline (implementer -> spec-reviewer -> code-quality-reviewer). You never write code in this mode.
 - **Debug, Verify, Finish: YOU do the work directly.** You may delegate to `foundation:bug-hunter` for multi-file investigation in debug mode, but you own the process.
+
+**Why fresh subagents per task:**
+- **Clean context** — No pollution from previous work
+- **Focused attention** — Single task, single responsibility
+- **Quality gates** — Review checkpoints catch issues early
+- **Parallel safety** — Subagents don't interfere with each other
 
 ## Reference: Recipes
 

@@ -277,10 +277,11 @@ When entering this mode, announce:
 
 **Golden path:** `/verify`
 - Tell user: "Bug fixed and verified. Use `/verify` for comprehensive verification, then `/finish` to complete the branch."
+- Use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`.
 
 **Dynamic transitions:**
-- If fix reveals design flaw -> suggest `/brainstorm` because the architecture needs rethinking
-- If fix needs more implementation work -> suggest `/execute-plan` because new tasks should go through the pipeline
+- If fix reveals design flaw -> use the `mode` tool to request transitioning to brainstorm mode, or suggest the user type `/mode brainstorm`, because the architecture needs rethinking
+- If fix needs more implementation work -> use the `mode` tool to request transitioning to execute-plan mode, or suggest the user type `/mode execute-plan`, because new tasks should go through the pipeline
 - If multiple related bugs surface -> stay in `/debug` because each bug needs its own 4-phase cycle
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),

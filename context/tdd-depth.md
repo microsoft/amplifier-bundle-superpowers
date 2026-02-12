@@ -463,7 +463,7 @@ Can't check all boxes? You skipped TDD. Start over.
 
 ## Common Rationalizations
 
-These entries supplement the rationalization table in `superpowers-methodology.md` with entries specific to testing depth.
+These entries supplement the rationalization table in `philosophy.md` with entries specific to testing depth.
 
 | Excuse | Reality |
 |--------|---------|

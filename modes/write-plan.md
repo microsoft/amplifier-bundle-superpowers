@@ -218,9 +218,10 @@ When entering this mode, announce:
 
 **Golden path:** `/execute-plan`
 - Tell user: "Plan saved to [path] with [N] tasks. Use `/execute-plan` for subagent-driven execution, or run the subagent-driven-development recipe for automated execution with approval gates."
+- Use the `mode` tool to request transitioning to execute-plan mode, or suggest the user type `/mode execute-plan`.
 
 **Dynamic transitions:**
-- If design seems incomplete -> suggest `/brainstorm` first because a solid design prevents plan rework
+- If design seems incomplete -> use the `mode` tool to request transitioning to brainstorm mode, or suggest the user type `/mode brainstorm`, because a solid design prevents plan rework
 - If plan reveals design issues -> suggest `/brainstorm` to revisit because the design needs to be right before tasks are specified
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
