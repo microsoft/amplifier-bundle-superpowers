@@ -2,7 +2,7 @@
 meta:
   name: spec-reviewer
   description: |
-    Spec compliance reviewer that validates implementation against requirements. Use after an implementer completes a task to verify the code matches the specification exactly - nothing missing, nothing extra.
+    Use after an implementer completes a task to verify spec compliance
 
     Examples:
     <example>

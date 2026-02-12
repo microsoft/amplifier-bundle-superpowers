@@ -2,7 +2,7 @@
 meta:
   name: code-quality-reviewer
   description: |
-    Code quality reviewer that assesses implementation quality after spec compliance is confirmed. Use after spec-reviewer approves to check code quality, best practices, and maintainability.
+    Use after spec compliance is confirmed to assess code quality
 
     Examples:
     <example>

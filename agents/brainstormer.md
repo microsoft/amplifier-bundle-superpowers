@@ -2,7 +2,7 @@
 meta:
   name: brainstormer
   description: |
-    Design refinement agent that helps turn ideas into fully-formed specs through collaborative dialogue. Use BEFORE any creative work - creating features, building components, adding functionality. Explores requirements and design before implementation.
+    Use when starting any creative work — creating features, building components, adding functionality
 
     Examples:
     <example>
