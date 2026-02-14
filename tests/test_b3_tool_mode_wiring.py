@@ -139,16 +139,33 @@ class TestInstructionsModeToolNote:
         )
 
     def test_mentions_mode_tool_set_operation(self):
-        """instructions.md must show the mode tool set operation syntax."""
-        assert "mode(" in self.content, "Expected mode() call syntax in instructions.md"
+        """instructions.md or superpowers-reference skill must show mode() call syntax."""
+        # After context trimming, mode() syntax moved to superpowers-reference skill.
+        # instructions.md still references the mode tool conceptually.
+        skill_path = os.path.join(
+            REPO_ROOT, "skills", "superpowers-reference", "SKILL.md"
+        )
+        skill_content = ""
+        if os.path.isfile(skill_path):
+            with open(skill_path) as f:
+                skill_content = f.read()
+        assert "mode(" in self.content or "mode(" in skill_content, (
+            "Expected mode() call syntax in instructions.md or superpowers-reference skill"
+        )
 
     def test_mentions_gate_policy_behavior(self):
-        """instructions.md should mention the confirmation/blocking behavior."""
-        content_lower = self.content.lower()
+        """instructions.md or superpowers-reference skill should mention gate/blocking behavior."""
+        # After context trimming, detailed mode tool docs moved to superpowers-reference skill.
+        skill_path = os.path.join(
+            REPO_ROOT, "skills", "superpowers-reference", "SKILL.md"
+        )
+        skill_content = ""
+        if os.path.isfile(skill_path):
+            with open(skill_path) as f:
+                skill_content = f.read()
+        combined = (self.content + skill_content).lower()
         assert (
-            "blocked" in content_lower
-            or "reminder" in content_lower
-            or "confirm" in content_lower
+            "blocked" in combined or "reminder" in combined or "confirm" in combined
         ), "Expected mention of gate/blocking/confirm behavior for mode tool"
 
 
@@ -190,27 +207,27 @@ class TestModeFilesTransitions:
         )
 
     def test_brainstorm_transitions_mention_mode_tool(self):
-        """brainstorm.md transitions should mention the mode tool."""
+        """brainstorm.md transitions should reference mode tool (explicit call or mention)."""
         content = self._read_mode("brainstorm.md")
         transitions = self._get_transitions_section(content)
-        assert "`mode` tool" in transitions or "mode tool" in transitions, (
-            "Expected brainstorm.md transitions to mention the mode tool"
+        assert "`mode` tool" in transitions or "mode tool" in transitions or "mode(" in transitions, (
+            "Expected brainstorm.md transitions to reference the mode tool"
         )
 
     def test_execute_plan_transitions_mention_mode_tool(self):
-        """execute-plan.md transitions should mention the mode tool."""
+        """execute-plan.md transitions should reference mode tool (explicit call or mention)."""
         content = self._read_mode("execute-plan.md")
         transitions = self._get_transitions_section(content)
-        assert "`mode` tool" in transitions or "mode tool" in transitions, (
-            "Expected execute-plan.md transitions to mention the mode tool"
+        assert "`mode` tool" in transitions or "mode tool" in transitions or "mode(" in transitions, (
+            "Expected execute-plan.md transitions to reference the mode tool"
         )
 
     def test_verify_transitions_mention_mode_tool(self):
-        """verify.md transitions should mention the mode tool."""
+        """verify.md transitions should reference mode tool (explicit call or mention)."""
         content = self._read_mode("verify.md")
         transitions = self._get_transitions_section(content)
-        assert "`mode` tool" in transitions or "mode tool" in transitions, (
-            "Expected verify.md transitions to mention the mode tool"
+        assert "`mode` tool" in transitions or "mode tool" in transitions or "mode(" in transitions, (
+            "Expected verify.md transitions to reference the mode tool"
         )
 
 
