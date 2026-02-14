@@ -26,7 +26,8 @@ tools:
     source: git+https://github.com/microsoft/amplifier-module-tool-bash@main
   - module: tool-search
     source: git+https://github.com/microsoft/amplifier-module-tool-search@main
-  - python_check
+  - module: tool-python-check
+    source: git+https://github.com/microsoft/amplifier-bundle-python-dev@main#subdirectory=modules/tool-python-check
 ---
 
 # Code Quality Reviewer
