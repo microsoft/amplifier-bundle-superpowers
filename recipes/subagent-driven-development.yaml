@@ -168,6 +168,20 @@ stages:
                 output: "task_implementation"
                 timeout: 600
 
+          # --- 2b.1: Check if spec review exhausted without approval ---
+          - id: "check-spec-resolution"
+            condition: "{{spec_verdict}} contains NEEDS CHANGES"
+            agent: "superpowers:plan-writer"
+            prompt: |
+              WARNING: Spec review loop exhausted after 3 iterations without approval.
+              Task: {{current_task}}
+              Last spec verdict: {{spec_verdict}}
+
+              Flag this task as having unresolved spec issues. Include this warning
+              in the task summary so the human reviewer is aware during the approval gate.
+            output: "spec_unresolved"
+            timeout: 300
+
           # --- 2c: Code quality review loop ---
           - id: "quality-review-loop"
             while_condition: "true"
@@ -225,6 +239,20 @@ stages:
                 output: "task_implementation"
                 timeout: 600
 
+          # --- 2c.1: Check if quality review exhausted without approval ---
+          - id: "check-quality-resolution"
+            condition: "{{quality_verdict}} contains NEEDS CHANGES"
+            agent: "superpowers:plan-writer"
+            prompt: |
+              WARNING: Quality review loop exhausted after 3 iterations without approval.
+              Task: {{current_task}}
+              Last quality verdict: {{quality_verdict}}
+
+              Flag this task as having unresolved quality issues. Include this warning
+              in the task summary so the human reviewer is aware during the approval gate.
+            output: "quality_unresolved"
+            timeout: 300
+
         collect: "completed_tasks"
 
       # -----------------------------------------------------------------------
@@ -242,6 +270,9 @@ stages:
 
           ORIGINAL TASKS:
           {{tasks}}
+
+          If any tasks have unresolved spec or quality issues (exhausted review iterations),
+          prominently flag them in the summary with WARNING markers.
 
           Create a comprehensive summary including:
 
