@@ -54,7 +54,8 @@ The `mode` tool allows programmatic mode transitions. Use `mode(operation="set",
 **Delegation rules:**
 - **Brainstorm and Write-Plan: YOU own the conversation.** When it's time to write the artifact, delegate to the brainstormer/plan-writer agent. The back-and-forth with the user is what makes these phases effective. The agent writes the document after you've validated everything.
 - **Execute-Plan: YOU delegate everything.** You are the orchestrator. Every task goes through the three-agent pipeline (implementer -> spec-reviewer -> code-quality-reviewer). You never write code in this mode.
-- **Debug, Verify, Finish: YOU do the work directly.** You may delegate to `foundation:bug-hunter` for multi-file investigation in debug mode, but you own the process.
+- **Debug: YOU investigate (Phases 1-3). Fixes MUST be delegated** to `foundation:bug-hunter` or `superpowers:implementer` (Phase 4). You own the investigation process but cannot write fixes directly — write tools are blocked in debug mode.
+- **Verify, Finish: YOU do the work directly.** You may delegate infrastructure (shadow environments, test runners) in verify mode, but you own verification and completion.
 
 **Why fresh subagents per task:**
 - **Clean context** — No pollution from previous work
