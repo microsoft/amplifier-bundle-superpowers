@@ -111,7 +111,7 @@ Load these for reference using the skills tool:
 |-------|---------|
 | `test-driven-development` | TDD methodology and rules |
 | `systematic-debugging` | 4-phase debugging framework |
-| `verification-before-completion` | Verification checklist |
+| `verification-before-completion` | Gate Function for verification — no claims without fresh evidence |
 
 ## Philosophy Reference
 
