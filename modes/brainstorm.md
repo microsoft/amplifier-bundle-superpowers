@@ -37,9 +37,26 @@ This gives the best of both worlds: interactive back-and-forth discussion (which
 You CANNOT write files in this mode. write_file and edit_file are blocked. The brainstormer agent has its own filesystem tools and will handle document creation.
 </CRITICAL>
 
+<HARD-GATE>
+Do NOT delegate document creation, invoke any implementation skill, or take any
+implementation action until you have presented a design section-by-section and
+the user has approved each section. This applies to EVERY project regardless of
+perceived simplicity.
+</HARD-GATE>
+
+When entering brainstorm mode, create this todo checklist immediately:
+- [ ] Explore project context
+- [ ] Ask clarifying questions (one at a time)
+- [ ] Propose 2-3 approaches with tradeoffs
+- [ ] Present design in sections (validate each)
+- [ ] Delegate document creation to brainstormer agent
+- [ ] Transition to /write-plan
+
 ## The Process
 
 Follow these phases in order. Do not skip phases. Do not compress multiple phases into one message.
+
+Before starting Phase 1, check for relevant skills: `load_skill(search="brainstorm")`. Follow any loaded skill alongside this mode guidance.
 
 ### Phase 1: Understand Context
 
@@ -60,6 +77,8 @@ Refine the idea through focused questioning:
 - If a topic needs more exploration, break it into multiple questions across messages
 
 Do NOT bundle questions. Do NOT present a "questionnaire." One question, wait for answer, next question.
+
+NEVER bundle questions. NEVER present a "questionnaire." If you catch yourself writing "Also," or "Additionally," before a second question — STOP. Delete it. One question. Wait.
 
 ### Phase 3: Explore Approaches
 
@@ -117,6 +136,8 @@ Ready to create the implementation plan? Use /write-plan to continue.
 | "I can just write the design doc myself" | You CANNOT. write_file is blocked. Delegate to superpowers:brainstormer. This is the architecture. |
 | "Delegation breaks the flow" | YOU own the conversation flow. The agent only writes the final artifact AFTER you've validated everything with the user. The flow is preserved. |
 
+Every project goes through this process. A todo list, a single-function utility — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short, but you MUST present it and get approval.
+
 ## Do NOT:
 - Write implementation code
 - Create or modify source files
@@ -147,12 +168,12 @@ When entering this mode, announce:
 
 **Golden path:** `/write-plan`
 - Tell user: "Design complete and saved to [path]. Use `/write-plan` to create an implementation plan, or I can run the full development cycle recipe to handle everything from here."
-- Use the `mode` tool to request transitioning to write-plan mode, or suggest the user type `/mode write-plan`.
+- Use `mode(operation='set', name='write-plan')` to transition. The first call will be denied (gate policy); call again to confirm.
 
 **Dynamic transitions:**
-- If bug mentioned -> use the `mode` tool to request transitioning to debug mode, or suggest the user type `/mode debug`, because systematic debugging has its own process
-- If already have a clear spec -> skip to `/write-plan` because design refinement isn't needed
-- If user wants to explore code first -> suggest `/mode off` and use `foundation:explorer` because understanding the codebase should precede design
+- If bug mentioned -> use `mode(operation='set', name='debug')` because systematic debugging has its own process
+- If already have a clear spec -> use `mode(operation='set', name='write-plan')` because design refinement isn't needed
+- If user wants to explore code first -> use `mode(operation='clear')` and use `foundation:explorer` because understanding the codebase should precede design
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
