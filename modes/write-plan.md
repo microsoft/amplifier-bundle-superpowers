@@ -71,7 +71,19 @@ Once you and the user agree on the plan structure, DELEGATE to plan-writer:
 ```
 delegate(
   agent="superpowers:plan-writer",
-  instruction="Create implementation plan from design at [path]. Break into bite-sized TDD tasks with exact file paths, complete code, and expected test output. Audience: enthusiastic junior engineer with zero context and questionable taste. [Include any specific guidance from the discussion: task ordering, dependencies, scope boundaries, patterns to follow.]",
+  instruction="""Create implementation plan from the design at [path].
+
+Audience: enthusiastic junior engineer with zero context and questionable taste.
+
+Include ALL of the following from our discussion:
+1. Design document path: [exact path]
+2. Task ordering: [the agreed sequence and any dependencies between tasks]
+3. Scope boundaries: [what's in v1 vs deferred — list specific items]
+4. Codebase patterns to follow: [naming conventions, directory structure, test framework, assertion style]
+5. Key files/directories: [list the main source dirs, test dirs, config files the plan should reference]
+6. User preferences: [any specific requests about task granularity, organization, or approach]
+
+Break into bite-sized TDD tasks with exact file paths, complete code, and expected test output. The plan-writer agent has search tools — it will explore the codebase to verify paths and patterns, but the above context ensures nothing from our discussion is lost.""",
   context_depth="recent",
   context_scope="conversation"
 )
