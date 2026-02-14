@@ -133,6 +133,17 @@ When complete, report:
 - [x] Ready for spec review
 ```
 
+## Handling Bug Fixes from Debug Mode
+
+When delegated a bug fix (from `/debug` mode via `foundation:bug-hunter` or directly):
+
+- **The root cause and evidence** will be in the delegation instruction — read them carefully
+- **The reproducing test IS your RED test** — write a test that demonstrates the bug, verify it fails
+- **The minimal fix IS your GREEN implementation** — fix only what's broken, nothing else
+- **Verify the fix yourself** before reporting — run the test, confirm it passes, check no regressions
+
+This follows the standard TDD cycle but with the investigation already done by the orchestrating agent.
+
 ## Red Flags - Stop and Ask
 
 - Spec is ambiguous
