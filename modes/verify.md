@@ -183,15 +183,15 @@ When entering this mode, announce:
 
 **Golden path (pass):** `/finish`
 - Tell user: "Verification complete - all checks pass. Use `/finish` to merge, create PR, or complete the branch."
-- Use the `mode` tool to request transitioning to finish mode, or suggest the user type `/mode finish`.
+- Use `mode(operation='set', name='finish')` to transition. The first call will be denied (gate policy); call again to confirm.
 
 **Golden path (fail):** `/debug`
 - Tell user: "Verification found issues: [list]. Use `/debug` to investigate."
-- Use the `mode` tool to request transitioning to debug mode, or suggest the user type `/mode debug`.
+- Use `mode(operation='set', name='debug')` to transition.
 
 **Dynamic transitions:**
-- If missing tests discovered → use the `mode` tool to request transitioning to execute-plan mode, or suggest the user type `/mode execute-plan`, because tests should go through the implementation pipeline
-- If missing feature discovered → suggest `/brainstorm` or `/write-plan` because new work needs design and planning
+- If missing tests discovered → use `mode(operation='set', name='execute-plan')` because tests should go through the implementation pipeline
+- If missing feature discovered → use `mode(operation='set', name='brainstorm')` or `mode(operation='set', name='write-plan')` because new work needs design and planning
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

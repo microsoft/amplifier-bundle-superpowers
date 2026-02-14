@@ -181,12 +181,12 @@ When entering this mode, announce:
 
 **Golden path:** `/verify`
 - Tell user: "All [N] tasks implemented and reviewed. Use `/verify` to confirm everything works end-to-end before completing the branch."
-- Use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`.
+- Use `mode(operation='set', name='verify')` to transition. The first call will be denied (gate policy); call again to confirm.
 
 **Dynamic transitions:**
-- If bug discovered during execution → use the `mode` tool to request transitioning to debug mode, or suggest the user type `/mode debug`, because systematic debugging beats guessing
-- If spec is ambiguous for a task → suggest revisiting `/brainstorm` because the design needs clarification
-- If task blocked by missing prerequisite → suggest revisiting `/write-plan` because the plan needs restructuring
+- If bug discovered during execution → use `mode(operation='set', name='debug')` because systematic debugging beats guessing
+- If spec is ambiguous for a task → use `mode(operation='set', name='brainstorm')` because the design needs clarification
+- If task blocked by missing prerequisite → use `mode(operation='set', name='write-plan')` because the plan needs restructuring
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

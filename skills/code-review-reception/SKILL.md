@@ -1,3 +1,8 @@
+---
+name: code-review-reception
+description: "How to receive and process code review feedback — technical evaluation, not emotional performance"
+---
+
 # Code Review Reception
 
 ## Overview

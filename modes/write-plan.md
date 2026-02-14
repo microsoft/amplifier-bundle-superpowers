@@ -218,11 +218,11 @@ When entering this mode, announce:
 
 **Golden path:** `/execute-plan`
 - Tell user: "Plan saved to [path] with [N] tasks. Use `/execute-plan` for subagent-driven execution, or run the subagent-driven-development recipe for automated execution with approval gates."
-- Use the `mode` tool to request transitioning to execute-plan mode, or suggest the user type `/mode execute-plan`.
+- Use `mode(operation='set', name='execute-plan')` to transition. The first call will be denied (gate policy); call again to confirm.
 
 **Dynamic transitions:**
-- If design seems incomplete -> use the `mode` tool to request transitioning to brainstorm mode, or suggest the user type `/mode brainstorm`, because a solid design prevents plan rework
-- If plan reveals design issues -> suggest `/brainstorm` to revisit because the design needs to be right before tasks are specified
+- If design seems incomplete -> use `mode(operation='set', name='brainstorm')` because a solid design prevents plan rework
+- If plan reveals design issues -> use `mode(operation='set', name='brainstorm')` because the design needs to be right before tasks are specified
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

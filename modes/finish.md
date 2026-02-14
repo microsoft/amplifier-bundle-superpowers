@@ -206,11 +206,12 @@ When entering this mode, announce:
 
 **Golden path:** Session complete
 - Tell user: "Branch completed via [chosen option]. Great work!"
+- Use `mode(operation='clear')` to exit modes.
 
 **Dynamic transitions:**
-- If tests failing → use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`, because tests must pass before completion
-- If unreviewed changes exist → use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`, because all changes need verification evidence
-- If user wants to add more work → suggest `/mode off` because open-ended work doesn't need a mode
+- If tests failing → use `mode(operation='set', name='verify')` because tests must pass before completion
+- If unreviewed changes exist → use `mode(operation='set', name='verify')` because all changes need verification evidence
+- If user wants to add more work → use `mode(operation='clear')` because open-ended work doesn't need a mode
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

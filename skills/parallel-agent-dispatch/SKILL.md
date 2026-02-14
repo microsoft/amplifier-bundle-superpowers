@@ -1,3 +1,8 @@
+---
+name: parallel-agent-dispatch
+description: "Patterns for dispatching multiple agents in parallel for independent problem domains"
+---
+
 # Dispatching Parallel Agents
 
 ## Overview

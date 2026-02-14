@@ -27,6 +27,7 @@ tools:
 skills:
   sources:
     - git+https://github.com/obra/superpowers@main#subdirectory=skills
+    - "@superpowers:skills"
 ---
 
 # Superpowers Development Methodology

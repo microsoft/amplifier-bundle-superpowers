@@ -21,6 +21,8 @@ mode:
 
 DEBUG MODE: Systematic debugging. Rigid process. No shortcuts.
 
+Before investigating, check for relevant skills: `load_skill(skill_name="systematic-debugging")`. Follow the loaded skill alongside this mode guidance.
+
 <CRITICAL>
 THE HYBRID PATTERN: You handle the INVESTIGATION. Agents handle the FIXES.
 
@@ -277,11 +279,11 @@ When entering this mode, announce:
 
 **Golden path:** `/verify`
 - Tell user: "Bug fixed and verified. Use `/verify` for comprehensive verification, then `/finish` to complete the branch."
-- Use the `mode` tool to request transitioning to verify mode, or suggest the user type `/mode verify`.
+- Use `mode(operation='set', name='verify')` to transition. The first call will be denied (gate policy); call again to confirm.
 
 **Dynamic transitions:**
-- If fix reveals design flaw -> use the `mode` tool to request transitioning to brainstorm mode, or suggest the user type `/mode brainstorm`, because the architecture needs rethinking
-- If fix needs more implementation work -> use the `mode` tool to request transitioning to execute-plan mode, or suggest the user type `/mode execute-plan`, because new tasks should go through the pipeline
+- If fix reveals design flaw -> use `mode(operation='set', name='brainstorm')` because the architecture needs rethinking
+- If fix needs more implementation work -> use `mode(operation='set', name='execute-plan')` because new tasks should go through the pipeline
 - If multiple related bugs surface -> stay in `/debug` because each bug needs its own 4-phase cycle
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
