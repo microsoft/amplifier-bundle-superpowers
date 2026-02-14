@@ -26,6 +26,7 @@ tools:
     source: git+https://github.com/microsoft/amplifier-module-tool-bash@main
   - module: tool-search
     source: git+https://github.com/microsoft/amplifier-module-tool-search@main
+  - python_check
 ---
 
 # Task Implementer
@@ -78,6 +79,7 @@ Before signaling completion, verify:
 - [ ] All tests pass
 - [ ] Code is clean and readable
 - [ ] Commit is atomic and well-messaged
+- [ ] Ran `python_check` on changed files (for Python projects)
 
 If you can't check all boxes, consult the TDD reference below for what went wrong.
 

@@ -35,7 +35,13 @@ For EVERY task in the plan, you MUST delegate to the three-agent pipeline below.
 
 ## Prerequisites
 
-An implementation plan MUST exist from `/write-plan` or a plan-writer agent. If no plan exists, STOP and tell the user to create one first.
+**Plan required:** An implementation plan MUST exist from `/write-plan` or a plan-writer agent. If no plan exists, STOP and tell the user to create one first.
+
+**Workspace isolation recommended:** Before executing tasks, suggest creating an isolated workspace to protect the main branch:
+```
+recipes(operation="execute", recipe_path="@superpowers:recipes/git-worktree-setup.yaml")
+```
+If the user is already in a worktree or prefers to work on the current branch, proceed — but note that workspace isolation prevents accidental damage to the main branch.
 
 ## The Mandatory Three-Agent Pipeline
 
@@ -45,7 +51,14 @@ For EACH task in the plan, you MUST execute these three stages IN ORDER:
 ```
 delegate(
   agent="superpowers:implementer",
-  instruction="Implement Task N: [full task description from plan]. Follow TDD: write failing test first, then minimal implementation to pass, then commit.",
+  instruction="""Implement Task N of M: [task name]
+
+Context: [What was built in previous tasks. What this task builds on. Key architectural decisions relevant to this task.]
+
+Task description:
+[Full task description from plan]
+
+Follow TDD: write failing test first, then minimal implementation to pass, then commit. Run python_check on changed files before submitting.""",
   context_depth="none"
 )
 ```
@@ -56,7 +69,12 @@ YOU MUST wait for the implementer to complete before proceeding to Stage 2.
 ```
 delegate(
   agent="superpowers:spec-reviewer",
-  instruction="Review Task N implementation against the spec. Requirements: [paste requirements from plan]. Verify: nothing missing, nothing extra.",
+  instruction="""Review Task N of M: [task name]
+
+Requirements from plan:
+[paste requirements]
+
+Verify: everything in spec is implemented, nothing extra added, behavior matches exactly.""",
   context_depth="recent",
   context_scope="agents"
 )
@@ -68,7 +86,9 @@ If the spec-reviewer reports FAIL → DELEGATE back to implementer with the fix 
 ```
 delegate(
   agent="superpowers:code-quality-reviewer",
-  instruction="Review Task N for code quality. Check: best practices, no unnecessary complexity, meaningful tests, clean code.",
+  instruction="""Review Task N of M: [task name]
+
+Review for code quality: best practices, no unnecessary complexity, meaningful tests, clean code.""",
   context_depth="recent",
   context_scope="agents"
 )
@@ -102,6 +122,15 @@ recipes(operation="execute", recipe_path="@superpowers:recipes/subagent-driven-d
 ```
 
 The recipe handles foreach loops, approval gates, and progress tracking automatically. It is BETTER than manual orchestration for multi-task plans.
+
+**Choose the right execution recipe:**
+
+| Recipe | Per-Task Review | Review Retries | Final Review | Best For |
+|--------|----------------|---------------|-------------|----------|
+| `subagent-driven-development` | YES (3 agents) | max 3 iterations | YES (holistic) | Full rigor, independent tasks |
+| `executing-plans` | NO (self-review) | None | NO | Human-guided batches, coupled tasks |
+
+The subagent-driven-development recipe provides the highest quality guarantees. Use executing-plans when you need tight human oversight between batches or when tasks are tightly coupled and benefit from a single agent maintaining context across the batch.
 
 ## Your Role: State Machine
 
@@ -151,6 +180,19 @@ You are a state machine. Your states are:
 - Fix issues yourself instead of delegating to implementer
 - Skip spec-review or code-quality-review for any task
 - Proceed to the next task before both reviews pass
+
+## Operational Rules
+
+These rules govern HOW you dispatch and manage sub-agents:
+
+1. **Never dispatch multiple implementers in parallel** — Tasks execute sequentially. Parallel implementation causes file conflicts and merge nightmares.
+2. **Never make a sub-agent read the plan file** — Provide the full task text in the delegation instruction. Sub-agents should not need to find or parse the plan.
+3. **Never start quality review before spec review passes** — The ordering is: implement → spec-review (until APPROVED) → THEN quality-review. Never skip ahead.
+4. **Never fix issues yourself instead of delegating** — If a reviewer finds problems, delegate back to the implementer with fix instructions. You are the orchestrator.
+5. **Never proceed to the next task with open review issues** — Both spec-review and quality-review must pass before moving on.
+6. **Never skip either review stage** — Even for "simple" or "obvious" tasks. The pipeline IS the process, regardless of perceived complexity.
+7. **Never accept "close enough" on spec compliance** — Missing requirement = fail. Extra feature = fail. Different behavior = fail.
+8. **Never rush a sub-agent past questions** — If the implementer asks for clarification, answer clearly and completely before re-dispatching.
 
 ## Completion
 
