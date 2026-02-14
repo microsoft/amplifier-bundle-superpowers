@@ -30,6 +30,13 @@ Always find the root cause before attempting fixes. Follow the four-phase debugg
 
 "It should work" is not verification. "I tested it manually" is not proof.
 
+**The Gate Function — apply before ANY completion claim:**
+1. IDENTIFY: What command proves this claim?
+2. RUN: Execute the FULL command (fresh, in this session)
+3. READ: Full output, check exit code, count failures
+4. VERIFY: Does output confirm the claim?
+5. ONLY THEN: Make the claim
+
 Every fix must be demonstrated with evidence: tests passing, manual verification documented, side effects checked.
 
 ### 4. Complexity Reduction as Primary Goal

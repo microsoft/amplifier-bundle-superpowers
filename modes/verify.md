@@ -13,9 +13,11 @@ mode:
       - LSP
       - python_check
       - todo
+      - load_skill
     warn:
       - write_file
       - edit_file
+      - delegate
   
   default_action: block
 ---
@@ -96,6 +98,25 @@ Check that nothing else broke:
 ❌ "I don't think anything else is affected"
 ```
 
+## Delegation During Verification
+
+`delegate` is on WARN — the first call is blocked with a reminder. This is intentional.
+
+**Delegation for infrastructure IS allowed:**
+- Shadow environments for isolated testing
+- Test runners in different contexts
+- Multi-repo verification requiring agents in other workspaces
+- Environment setup needed to run verification commands
+
+These provide the ENVIRONMENT for verification. You still read and interpret the results yourself.
+
+**Delegation for verification claims is NOT allowed:**
+- Never delegate "check if this works" and trust the agent's report
+- Never delegate "run the tests" and accept "all passed" without seeing output
+- YOU must read the test output. YOU must interpret the results.
+
+The warn policy gives you a moment to ask: "Am I delegating infrastructure, or am I delegating my responsibility to verify?"
+
 ## Common Verification Requirements
 
 | Claim | Requires | NOT Sufficient |
@@ -107,6 +128,16 @@ Check that nothing else broke:
 | "Regression test works" | Red-green cycle verified | Test passes once |
 | "Agent completed task" | VCS diff shows correct changes | Agent reports "success" |
 | "Requirements met" | Line-by-line checklist with evidence | "Tests passing" |
+
+## Verifying Delegated Work
+
+If tasks were executed by sub-agents during `/execute-plan`:
+1. **Check VCS diffs** — `git log`, `git diff` to see what actually changed
+2. **Run tests yourself** — don't rely on the implementer's reported test results
+3. **Spot-check code** — read the actual implementation, not the agent's summary
+4. **Verify behavior** — run the specific scenarios the implementation claims to handle
+
+"Agent completed task" requires VCS diff showing correct changes — NOT the agent's success report.
 
 ## Red Flags — STOP Immediately
 
@@ -195,3 +226,5 @@ When entering this mode, announce:
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
+
+**Note:** The `mode` tool is exempt from `default_action: block` — mode transitions must always be possible for the workflow to function. This is handled by the mode system infrastructure, not by the tool policy.
