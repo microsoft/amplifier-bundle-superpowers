@@ -1,10 +1,10 @@
-"""Verification tests for B4: Handle Problematic JIT Skills + Create New Context Files.
+"""Verification tests for B4: Context files and skills.
 
 Tests that:
 1. using-superpowers-amplifier.md exists with required content, no Claude Code refs
-2. code-review-reception.md exists with required content, no Claude Code refs
-3. parallel-dispatch.md exists with required content, uses delegate() not Task()
-4. superpowers-methodology.yaml includes all 3 new context files
+2. code-review-reception skill exists with required content, no Claude Code refs
+3. parallel-agent-dispatch skill exists with required content, uses delegate() not Task()
+4. superpowers-methodology.yaml includes required context files
 """
 
 import os
@@ -14,6 +14,7 @@ import pytest
 
 REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
 CONTEXT_DIR = os.path.join(REPO_ROOT, "context")
+SKILLS_DIR = os.path.join(REPO_ROOT, "skills")
 BEHAVIOR_FILE = os.path.join(REPO_ROOT, "behaviors", "superpowers-methodology.yaml")
 
 CLAUDE_CODE_FORBIDDEN = [
@@ -26,6 +27,13 @@ CLAUDE_CODE_FORBIDDEN = [
 def read_context(filename: str) -> str:
     path = os.path.join(CONTEXT_DIR, filename)
     assert os.path.isfile(path), f"File does not exist: {path}"
+    with open(path) as f:
+        return f.read()
+
+
+def read_skill(skill_name: str) -> str:
+    path = os.path.join(SKILLS_DIR, skill_name, "SKILL.md")
+    assert os.path.isfile(path), f"Skill file does not exist: {path}"
     with open(path) as f:
         return f.read()
 
@@ -74,13 +82,13 @@ class TestUsingSuperPowersAmplifier:
             )
 
 
-# --- code-review-reception.md ---
+# --- code-review-reception skill ---
 
 
 class TestCodeReviewReception:
     @pytest.fixture(autouse=True)
     def load_content(self):
-        self.content = read_context("code-review-reception.md")
+        self.content = read_skill("code-review-reception")
 
     def test_has_forbidden_responses(self):
         assert "You're absolutely right!" in self.content
@@ -117,13 +125,13 @@ class TestCodeReviewReception:
             )
 
 
-# --- parallel-dispatch.md ---
+# --- parallel-agent-dispatch skill ---
 
 
 class TestParallelDispatch:
     @pytest.fixture(autouse=True)
     def load_content(self):
-        self.content = read_context("parallel-dispatch.md")
+        self.content = read_skill("parallel-agent-dispatch")
 
     def test_has_decision_framework(self):
         # Should have when-to-use guidance
@@ -163,8 +171,9 @@ class TestBehaviorYamlWiring:
     def test_includes_using_superpowers_amplifier(self):
         assert "superpowers:context/using-superpowers-amplifier.md" in self.content
 
-    def test_includes_code_review_reception(self):
-        assert "superpowers:context/code-review-reception.md" in self.content
+    def test_includes_modes_instructions(self):
+        assert "modes:context/modes-instructions.md" in self.content
 
-    def test_includes_parallel_dispatch(self):
-        assert "superpowers:context/parallel-dispatch.md" in self.content
+    def test_does_not_include_deleted_context_files(self):
+        assert "code-review-reception.md" not in self.content
+        assert "parallel-dispatch.md" not in self.content

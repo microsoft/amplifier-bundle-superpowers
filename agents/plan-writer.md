@@ -22,6 +22,8 @@ meta:
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
+  - module: tool-search
+    source: git+https://github.com/microsoft/amplifier-module-tool-search@main
 ---
 
 # Implementation Plan Writer
@@ -36,6 +38,17 @@ Assume the implementer:
 - Has questionable judgment about test design
 - Will follow instructions literally
 - Needs explicit, bite-sized steps
+
+## Before Writing
+
+Before writing the plan, explore the codebase to ensure accuracy:
+1. **Read the design document** referenced in the delegation instruction
+2. **Search for existing patterns** — use grep/glob to find naming conventions, directory structure, test organization
+3. **Check existing test structure** — match the project's testing conventions (test file locations, framework, assertion style)
+4. **Verify file paths** — confirm directories exist and paths in the plan will be correct
+5. **Note imports and dependencies** — understand what's already available so plan code is accurate
+
+This exploration ensures the plan contains verified, accurate paths and real code patterns — not guesses.
 
 ## Plan Header (Required)
 
