@@ -35,10 +35,10 @@ class TestSpecReviewerTools:
         )
 
     def test_has_python_check_in_frontmatter(self):
-        """spec-reviewer.md must have python_check in its tools list."""
+        """spec-reviewer.md must have tool-python-check in its tools list."""
         frontmatter = _read_frontmatter_tools(SPEC_REVIEWER)
-        assert "python_check" in frontmatter, (
-            "python_check not found in spec-reviewer.md frontmatter tools list"
+        assert "tool-python-check" in frontmatter, (
+            "tool-python-check not found in spec-reviewer.md frontmatter tools list"
         )
 
     def test_has_verification_instructions(self):
@@ -66,10 +66,10 @@ class TestCodeQualityReviewerTools:
         )
 
     def test_has_python_check_in_frontmatter(self):
-        """code-quality-reviewer.md must have python_check in its tools list."""
+        """code-quality-reviewer.md must have tool-python-check in its tools list."""
         frontmatter = _read_frontmatter_tools(CODE_QUALITY_REVIEWER)
-        assert "python_check" in frontmatter, (
-            "python_check not found in code-quality-reviewer.md frontmatter tools list"
+        assert "tool-python-check" in frontmatter, (
+            "tool-python-check not found in code-quality-reviewer.md frontmatter tools list"
         )
 
     def test_has_verification_instructions(self):
