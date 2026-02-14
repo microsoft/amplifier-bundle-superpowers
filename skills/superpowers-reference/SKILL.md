@@ -45,14 +45,14 @@ The `mode` tool allows programmatic mode transitions. Use `mode(operation="set",
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `superpowers:brainstormer` | Design document writer | MANDATORY — after brainstorm conversation, delegate document creation |
-| `superpowers:plan-writer` | Implementation plan writer | MANDATORY — after write-plan conversation, delegate plan creation |
+| `superpowers:brainstormer` | Design refinement specialist | MANDATORY — after brainstorm conversation, delegate document creation |
+| `superpowers:plan-writer` | Detailed plan creation | MANDATORY — after write-plan conversation, delegate plan creation |
 | `superpowers:implementer` | Implements tasks following strict TDD | MANDATORY -- every task in `/execute-plan` |
 | `superpowers:spec-reviewer` | Reviews implementation against spec | MANDATORY -- every task in `/execute-plan`, after implementer |
 | `superpowers:code-quality-reviewer` | Reviews code quality and best practices | MANDATORY -- every task in `/execute-plan`, after spec-reviewer |
 
 **Delegation rules:**
-- **Brainstorm and Write-Plan: YOU own the conversation. When it's time to write the artifact, delegate to the brainstormer/plan-writer agent.** The back-and-forth with the user is what makes these phases effective. The agent writes the document after you've validated everything.
+- **Brainstorm and Write-Plan: YOU own the conversation.** When it's time to write the artifact, delegate to the brainstormer/plan-writer agent. The back-and-forth with the user is what makes these phases effective. The agent writes the document after you've validated everything.
 - **Execute-Plan: YOU delegate everything.** You are the orchestrator. Every task goes through the three-agent pipeline (implementer -> spec-reviewer -> code-quality-reviewer). You never write code in this mode.
 - **Debug, Verify, Finish: YOU do the work directly.** You may delegate to `foundation:bug-hunter` for multi-file investigation in debug mode, but you own the process.
 
@@ -95,7 +95,7 @@ Execute these workflows using the recipes tool:
 ## Reference: Key Rules
 
 1. **Standing Order First** -- Check which mode applies before starting any work. Suggest it even if you're only 1% sure.
-2. **Own Design Conversations, Delegate Artifacts** -- You brainstorm and discuss plans yourself. When it's time to write the document, delegate to the brainstormer/plan-writer agent.
+2. **Own Design Conversations, Delegate Artifacts** -- You brainstorm and write plans through conversation. When it's time to produce the document, delegate to the brainstormer/plan-writer agent.
 3. **Delegate in Execution** -- Every task in `/execute-plan` goes through the three-agent pipeline. No exceptions.
 4. **TDD Always** -- No production code without failing test first.
 5. **Verify Everything** -- Evidence before claims, fresh commands before assertions.
