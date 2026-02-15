@@ -96,11 +96,24 @@ Which option?
 ```bash
 git checkout <base-branch>
 git pull
-git merge <feature-branch>
+git merge --ff-only <feature-branch>
+# If fast-forward merge fails (branch has diverged):
+#   "Fast-forward merge not possible — branch has diverged from <base-branch>."
+#   Offer: (a) Create a PR instead (Option 2)
+#          (b) Regular merge: git merge <feature-branch>
+#          (c) Rebase first: git rebase <base-branch> from feature branch
+#   Wait for user choice before proceeding.
+#
+# If merge conflicts occur (from regular merge):
+#   Show conflicting files: git diff --name-only --diff-filter=U
+#   Offer: resolve manually, abort (git merge --abort), or switch to PR (Option 2)
+#   Do NOT force-resolve conflicts without user guidance.
+#
 # Verify tests on merged result
 <test command>
 # If tests pass
 git branch -d <feature-branch>
+git push origin --delete <feature-branch> 2>/dev/null  # Clean up remote if pushed
 ```
 
 Then: Check if in worktree and clean up if applicable.
@@ -145,6 +158,7 @@ If confirmed:
 ```bash
 git checkout <base-branch>
 git branch -D <feature-branch>
+git push origin --delete <feature-branch> 2>/dev/null  # Clean up remote if pushed
 ```
 
 Then: Clean up worktree if applicable.
