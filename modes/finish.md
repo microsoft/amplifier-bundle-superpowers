@@ -15,6 +15,7 @@ mode:
       - recipes
       - LSP
       - python_check
+      - load_skill
     warn:
       - write_file
       - edit_file
