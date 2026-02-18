@@ -30,6 +30,10 @@ In Amplifier: Use `load_skill()` to check for relevant skills. Use `/mode` comma
 <STANDING-ORDER>
 BEFORE EVERY RESPONSE:
 
+0. CHECK if a mode is already active: look for a `MODE ACTIVE:` banner or
+   `<system-reminder source="mode-...">` in your context. If present, that mode
+   is ALREADY ACTIVE — follow its guidance directly. Do NOT recommend or
+   re-activate it. Skip to following the mode's instructions.
 1. Determine which mode applies to the user's message.
 2. If a mode applies, tell the user which mode and why.
 3. If the user hasn't activated a mode and one clearly applies, say so.
