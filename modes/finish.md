@@ -10,7 +10,6 @@ mode:
       - glob
       - grep
       - bash
-      - todo
       - delegate
       - recipes
       - LSP

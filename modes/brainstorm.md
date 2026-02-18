@@ -14,7 +14,6 @@ mode:
       - load_skill
       - LSP
       - python_check
-      - todo
       - delegate
       - recipes
     warn:
