@@ -22,12 +22,12 @@ tools:
     source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/tool-mode
     config:
       gate_policy: "warn"
-
-# Skills from original obra/superpowers (fetched and cached automatically)
-skills:
-  sources:
-    - git+https://github.com/obra/superpowers@main#subdirectory=skills
-    - "@superpowers:skills"
+  - module: tool-skills
+    source: git+https://github.com/microsoft/amplifier-module-tool-skills@main
+    config:
+      skills:
+        - "git+https://github.com/obra/superpowers@main#subdirectory=skills"
+        - "@superpowers:skills"
 ---
 
 # Superpowers Development Methodology
