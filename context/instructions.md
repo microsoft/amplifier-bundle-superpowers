@@ -43,7 +43,8 @@ This is not optional. This is not a suggestion.
 
 | User Says | You Recommend | Why |
 |-----------|---------------|-----|
-| "Build X", "Add feature Y", new work | `/brainstorm` | Design before code |
+| "Build X", "Add feature Y", new work (multi-agent or ambiguous scope) | Check `mode(operation="list")` for a `/decompose` mode. If available, suggest it. Otherwise → `/brainstorm` | Structured decomposition before design for complex work |
+| "Build X", "Add feature Y", new work (clear scope) | `/brainstorm` | Design before code |
 | Design exists, ready to plan | `/write-plan` | Plan before implementation |
 | Plan exists, ready to build | `/execute-plan` | Systematic execution |
 | Bug, error, unexpected behavior | `/debug` | Root cause before fixes |
@@ -88,7 +89,8 @@ Not every task needs the full pipeline. Match the approach to the task. This pre
 
 | Task Type | Recommended Approach |
 |-----------|----------------------|
-| New feature (multi-file) | Full cycle recipe OR `/brainstorm` -> `/write-plan` -> `/execute-plan` -> `/verify` -> `/finish` |
+| New feature (multi-agent or ambiguous scope) | Check for `/decompose` mode first, then execution modes. Falls back to full cycle recipe if no decompose available |
+| New feature (clear scope, multi-file) | Full cycle recipe OR `/brainstorm` -> `/write-plan` -> `/execute-plan` -> `/verify` -> `/finish` |
 | Bug fix | `/debug` -> `/verify` -> `/finish` |
 | Small change (< 20 lines) | Make the change, then `/verify` |
 | Refactoring | `/brainstorm` (if scope unclear) -> `/execute-plan` -> `/verify` -> `/finish` |
