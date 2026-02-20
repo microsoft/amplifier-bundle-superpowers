@@ -6,28 +6,7 @@ bundle:
 
 includes:
   - bundle: git+https://github.com/microsoft/amplifier-foundation@main
-  - bundle: superpowers:behaviors/superpowers-methodology.yaml
-
-# Mode hook to discover superpowers modes (brainstorm, write-plan, execute-plan, debug, verify, finish)
-hooks:
-  - module: hooks-mode
-    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/hooks-mode
-    config:
-      search_paths:
-        - "@superpowers:modes"
-
-# Mode tool for programmatic mode transitions (agents can request mode changes)
-tools:
-  - module: tool-mode
-    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/tool-mode
-    config:
-      gate_policy: "warn"
-  - module: tool-skills
-    source: git+https://github.com/microsoft/amplifier-module-tool-skills@main
-    config:
-      skills:
-        - "git+https://github.com/obra/superpowers@main#subdirectory=skills"
-        - "git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=skills"
+  - bundle: superpowers:behaviors/superpowers-methodology
 ---
 
 # Superpowers Development Methodology
@@ -68,7 +47,7 @@ You have access to the Superpowers development methodology - a comprehensive fra
 
 | Track | How | Best For |
 |-------|-----|----------|
-| **Interactive modes** | `/brainstorm` → `/write-plan` → `/execute-plan` → `/verify` → `/finish` | Hands-on sessions where you want control at each step |
+| **Interactive modes** | `/brainstorm` \u2192 `/write-plan` \u2192 `/execute-plan` \u2192 `/verify` \u2192 `/finish` | Hands-on sessions where you want control at each step |
 | **Recipe automation** | `superpowers-full-development-cycle.yaml` | End-to-end automation with approval gates between stages |
 
 Both tracks use the same agents, the same TDD process, and the same review pipeline. Modes give you the steering wheel; recipes give you cruise control.
@@ -89,7 +68,7 @@ Both tracks use the same agents, the same TDD process, and the same review pipel
 ## Available Agents
 
 | Agent | Purpose |
-|-------|---------| 
+|-------|---------|
 | `superpowers:implementer` | Implements tasks following TDD |
 | `superpowers:spec-reviewer` | Reviews code against spec compliance |
 | `superpowers:code-quality-reviewer` | Reviews code quality and best practices |
@@ -99,7 +78,7 @@ Both tracks use the same agents, the same TDD process, and the same review pipel
 ## Available Recipes
 
 | Recipe | Purpose |
-|--------|---------| 
+|--------|---------|
 | `superpowers:recipes/brainstorming.yaml` | Refine ideas into designs (staged, approval gate) |
 | `superpowers:recipes/writing-plans.yaml` | Create TDD implementation plans (staged, approval gate) |
 | `superpowers:recipes/subagent-driven-development.yaml` | Fresh agent per task with foreach + two-stage review |

@@ -1,11 +1,12 @@
 """Verification tests for B3: Wire tool-mode into Superpowers Bundle.
 
 Tests that:
-1. bundle.md has tool-mode in a tools: section with gate_policy: "warn"
-2. bundle.md hooks-mode config uses @superpowers:modes in search_paths
+1. The behavior YAML has tool-mode with gate_policy: "warn"
+2. The behavior YAML hooks-mode config uses @superpowers:modes in search_paths
 3. context/instructions.md mentions the mode tool
 4. At least 3 mode files reference the mode tool in their transitions
 5. All YAML frontmatter in bundle.md is valid
+6. bundle.md is a thin bundle that includes the behavior
 """
 
 import os
@@ -16,6 +17,7 @@ import pytest
 
 REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
 BUNDLE_MD = os.path.join(REPO_ROOT, "bundle.md")
+BEHAVIOR_YAML = os.path.join(REPO_ROOT, "behaviors", "superpowers-methodology.yaml")
 INSTRUCTIONS_MD = os.path.join(REPO_ROOT, "context", "instructions.md")
 MODES_DIR = os.path.join(REPO_ROOT, "modes")
 
@@ -62,23 +64,55 @@ def extract_yaml_blocks(content: str) -> list[str]:
     return blocks
 
 
-class TestBundleToolMode:
-    """Tests for tool-mode wiring in bundle.md."""
+class TestBundleThinPattern:
+    """Tests that bundle.md is a thin bundle including the behavior."""
 
     @pytest.fixture(autouse=True)
     def load_content(self):
         self.content = read_file(BUNDLE_MD)
 
+    def test_includes_behavior(self):
+        """bundle.md must include the superpowers methodology behavior."""
+        assert "superpowers:behaviors/superpowers-methodology" in self.content, (
+            "Expected bundle.md to include superpowers methodology behavior"
+        )
+
+    def test_includes_foundation(self):
+        """bundle.md must include the foundation bundle."""
+        assert "amplifier-foundation" in self.content, (
+            "Expected bundle.md to include amplifier-foundation"
+        )
+
+    def test_no_direct_tools(self):
+        """Thin bundle should not have its own tools: section."""
+        assert not re.search(r"^tools:", self.content, re.MULTILINE), (
+            "Thin bundle.md should not have a tools: section (moved to behavior)"
+        )
+
+    def test_no_direct_hooks(self):
+        """Thin bundle should not have its own hooks: section."""
+        assert not re.search(r"^hooks:", self.content, re.MULTILINE), (
+            "Thin bundle.md should not have a hooks: section (moved to behavior)"
+        )
+
+
+class TestBehaviorToolMode:
+    """Tests for tool-mode wiring in the behavior YAML."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self):
+        self.content = read_file(BEHAVIOR_YAML)
+
     def test_has_tools_section(self):
-        """bundle.md must have a top-level tools: section."""
+        """Behavior must have a top-level tools: section."""
         assert re.search(r"^tools:", self.content, re.MULTILINE), (
-            "Expected top-level 'tools:' section in bundle.md"
+            "Expected top-level 'tools:' section in behavior YAML"
         )
 
     def test_has_tool_mode_module(self):
         """tools: section must reference tool-mode module."""
         assert "module: tool-mode" in self.content, (
-            "Expected 'module: tool-mode' in bundle.md tools section"
+            "Expected 'module: tool-mode' in behavior YAML tools section"
         )
 
     def test_tool_mode_has_gate_policy_warn(self):
@@ -97,12 +131,12 @@ class TestBundleToolMode:
         )
 
 
-class TestBundleHooksModeSearchPaths:
-    """Tests for hooks-mode search_paths update."""
+class TestBehaviorHooksModeSearchPaths:
+    """Tests for hooks-mode search_paths in the behavior YAML."""
 
     @pytest.fixture(autouse=True)
     def load_content(self):
-        self.content = read_file(BUNDLE_MD)
+        self.content = read_file(BEHAVIOR_YAML)
 
     def test_search_paths_uses_at_superpowers_syntax(self):
         """hooks-mode search_paths must use @superpowers:modes syntax."""
@@ -113,13 +147,11 @@ class TestBundleHooksModeSearchPaths:
 
     def test_search_paths_no_bare_modes(self):
         """hooks-mode search_paths should not use bare 'modes' path."""
-        # Find the hooks-mode config section and check it doesn't use bare 'modes'
         hooks_match = re.search(
             r"hooks:.*?(?=^[a-z]|\Z)", self.content, re.MULTILINE | re.DOTALL
         )
-        assert hooks_match, "Expected hooks: section in bundle.md"
+        assert hooks_match, "Expected hooks: section in behavior YAML"
         hooks_section = hooks_match.group()
-        # The search_paths should not have a bare '- modes' line
         assert not re.search(r"^\s+- modes\s*$", hooks_section, re.MULTILINE), (
             "Expected search_paths to use '@superpowers:modes', not bare 'modes'"
         )
@@ -241,8 +273,8 @@ class TestYamlValidity:
     def test_yaml_blocks_parse(self):
         """All YAML blocks in bundle.md should parse without error."""
         blocks = extract_yaml_blocks(self.content)
-        assert len(blocks) >= 3, (
-            f"Expected at least 3 YAML blocks (bundle, hooks, tools, skills), found {len(blocks)}"
+        assert len(blocks) >= 2, (
+            f"Expected at least 2 YAML blocks (bundle, includes) in thin bundle, found {len(blocks)}"
         )
         for i, block in enumerate(blocks):
             try:

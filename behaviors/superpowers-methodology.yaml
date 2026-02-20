@@ -2,23 +2,59 @@ bundle:
   name: superpowers-methodology-behavior
   version: 1.0.0
   description: |
-    TDD and subagent-driven development methodology with specialized agents.
-    
+    TDD and subagent-driven development methodology with specialized agents,
+    interactive modes, and a skills library.
+
     Provides 5 agents:
     - implementer: TDD implementation with tests
     - spec-reviewer: Validates against spec compliance
     - code-quality-reviewer: Code quality and best practices
     - brainstormer: Design refinement facilitation
     - plan-writer: Detailed implementation plans
-    
+
+    Provides 6 interactive modes:
+    - brainstorm: Refine idea into a solid design
+    - write-plan: Create detailed implementation plan
+    - execute-plan: Orchestrate subagent-driven development
+    - debug: Systematic 4-phase debugging
+    - verify: Evidence-based verification
+    - finish: Branch completion
+
     Core principles:
     - Design before code (brainstorm first)
     - Test-driven development (RED-GREEN-REFACTOR)
     - Subagent-driven development (fresh agent per task)
     - Two-stage review (spec compliance, then quality)
     - Verification before completion
-    
+
     Compose onto your bundle for the Superpowers methodology.
+
+# Explicit dependency on the modes bundle for namespace resolution
+# (modes:context/modes-instructions.md needs the "modes" namespace registered)
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-modes@main
+
+# Mode hook to discover superpowers modes (brainstorm, write-plan, execute-plan, debug, verify, finish)
+hooks:
+  - module: hooks-mode
+    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/hooks-mode
+    config:
+      search_paths:
+        - "@superpowers:modes"
+
+# Mode tool for programmatic mode transitions (agents can request mode changes)
+# Skills tool for discoverable methodology knowledge
+tools:
+  - module: tool-mode
+    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/tool-mode
+    config:
+      gate_policy: "warn"
+  - module: tool-skills
+    source: git+https://github.com/microsoft/amplifier-module-tool-skills@main
+    config:
+      skills:
+        - "git+https://github.com/obra/superpowers@main#subdirectory=skills"
+        - "git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=skills"
 
 agents:
   include:
