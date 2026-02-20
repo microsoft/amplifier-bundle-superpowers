@@ -27,7 +27,7 @@ tools:
     config:
       skills:
         - "git+https://github.com/obra/superpowers@main#subdirectory=skills"
-        - "@superpowers:skills"
+        - "git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=skills"
 ---
 
 # Superpowers Development Methodology
