@@ -5,7 +5,7 @@ Before ANY response or action: check if a mode or skill applies. Even a 1% chanc
 In Amplifier: Use `load_skill()` to check for relevant skills. Use `/mode` commands (or the `mode` tool if available) to enter the appropriate workflow phase.
 
 ## Skill Priority
-1. Process skills FIRST (brainstorming, debugging, verification) — they determine HOW to approach
+1. Process skills FIRST (brainstorming, systematic-debugging, verification-before-completion) — they determine HOW to approach
 2. Implementation skills SECOND — they guide execution
 
 ## Red Flags — If You Catch Yourself Thinking Any of These, STOP
