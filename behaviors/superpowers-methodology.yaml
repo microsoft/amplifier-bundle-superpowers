@@ -29,10 +29,12 @@ bundle:
 
     Compose onto your bundle for the Superpowers methodology.
 
-# Explicit dependency on the modes bundle for namespace resolution
+# Explicit dependency on the modes behavior for namespace resolution
 # (modes:context/modes-instructions.md needs the "modes" namespace registered)
+# NOTE: Include the behavior, NOT the full bundle — the full bundle transitively
+# includes foundation, which overrides session.orchestrator to loop-streaming.
 includes:
-  - bundle: git+https://github.com/microsoft/amplifier-bundle-modes@main
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=behaviors/modes.yaml
 
 # Mode hook to discover superpowers modes (brainstorm, write-plan, execute-plan, debug, verify, finish)
 hooks:
