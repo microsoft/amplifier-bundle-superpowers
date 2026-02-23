@@ -61,11 +61,21 @@ stages:
           - files: Files likely to be created or modified
           - dependencies: Any tasks this depends on (if applicable)
 
-          Return the tasks as a JSON array that can be iterated.
-          Order tasks by dependencies (independent tasks first, dependent tasks later).
+          Return the result as a JSON object with this exact structure:
+          {"tasks": [<array of task objects>], "total_tasks": <number>}
+
+          Each task object in the array must have these keys:
+          - "task_id": string
+          - "description": string
+          - "spec": string (the detailed specification)
+          - "acceptance_criteria": string
+          - "files": array of file paths
+          - "dependencies": array of task_ids (empty array if none)
+
+          The "tasks" key MUST contain the ordered array. Order by dependencies (independent first).
 
           IMPORTANT: Preserve ALL spec details - they are critical for review.
-        output: "tasks"
+        output: "plan_data"
         parse_json: true
         timeout: 300
 
@@ -74,7 +84,7 @@ stages:
       # Each task goes through the FULL pipeline before the next task starts.
       # -----------------------------------------------------------------------
       - id: "per-task-pipeline"
-        foreach: "{{tasks}}"
+        foreach: "{{plan_data.tasks}}"
         as: "current_task"
         steps:
           # --- 2a: Implement the task ---
@@ -269,7 +279,7 @@ stages:
           {{completed_tasks}}
 
           ORIGINAL TASKS:
-          {{tasks}}
+          {{plan_data.tasks}}
 
           If any tasks have unresolved spec or quality issues (exhausted review iterations),
           prominently flag them in the summary with WARNING markers.

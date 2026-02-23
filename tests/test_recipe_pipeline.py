@@ -240,9 +240,9 @@ class TestSubagentRecipePreservesContextVariables:
         assert "plan_path" in content
 
     def test_references_tasks(self):
-        """Recipe must reference tasks variable."""
+        """Recipe must reference tasks variable (via dot-notation on plan_data)."""
         content = SUBAGENT_RECIPE.read_text()
-        assert "{{tasks}}" in content
+        assert "{{plan_data.tasks}}" in content
 
     def test_uses_collect_for_results(self):
         """Recipe must use collect to gather results."""
