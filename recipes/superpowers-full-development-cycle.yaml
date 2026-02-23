@@ -23,6 +23,7 @@ context:
   feature_name: ""      # Required: name for branch and files (e.g., "user-authentication")
   topic: ""             # Optional: initial idea description for brainstorming
   project_path: "."     # Project directory (defaults to current)
+  _approval_message: "" # Populated by engine when user approves with a message (e.g., "merge", "pr")
 
 stages:
   # ==========================================================================
