@@ -128,8 +128,8 @@ stages:
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
             while_condition: "true"
-            break_when: "{{spec_verdict}} contains APPROVED"
-            max_iterations: 3
+            break_when: "{{spec_approved}} == 'true'"
+            max_while_iterations: 3
             steps:
               - id: "spec-review"
                 agent: "superpowers:spec-reviewer"
@@ -157,8 +157,22 @@ stages:
                 output: "spec_verdict"
                 timeout: 600
 
+              # Extract a safe boolean from the raw markdown verdict
+              - id: "extract-spec-verdict"
+                type: "bash"
+                command: |
+                  if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
+                  {{spec_verdict}}
+                  VERDICT_DELIM
+                  then
+                    echo "true"
+                  else
+                    echo "false"
+                  fi
+                output: "spec_approved"
+
               - id: "spec-fix"
-                condition: "{{spec_verdict}} contains NEEDS CHANGES"
+                condition: "{{spec_approved}} == 'false'"
                 agent: "superpowers:implementer"
                 prompt: |
                   SPEC COMPLIANCE FIX
@@ -180,7 +194,7 @@ stages:
 
           # --- 2b.1: Check if spec review exhausted without approval ---
           - id: "check-spec-resolution"
-            condition: "{{spec_verdict}} contains NEEDS CHANGES"
+            condition: "{{spec_approved}} == 'false'"
             agent: "superpowers:plan-writer"
             prompt: |
               WARNING: Spec review loop exhausted after 3 iterations without approval.
@@ -195,8 +209,8 @@ stages:
           # --- 2c: Code quality review loop ---
           - id: "quality-review-loop"
             while_condition: "true"
-            break_when: "{{quality_verdict}} contains APPROVED"
-            max_iterations: 3
+            break_when: "{{quality_approved}} == 'true'"
+            max_while_iterations: 3
             steps:
               - id: "quality-review"
                 agent: "superpowers:code-quality-reviewer"
@@ -228,8 +242,22 @@ stages:
                 output: "quality_verdict"
                 timeout: 600
 
+              # Extract a safe boolean from the raw markdown verdict
+              - id: "extract-quality-verdict"
+                type: "bash"
+                command: |
+                  if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
+                  {{quality_verdict}}
+                  VERDICT_DELIM
+                  then
+                    echo "true"
+                  else
+                    echo "false"
+                  fi
+                output: "quality_approved"
+
               - id: "quality-fix"
-                condition: "{{quality_verdict}} contains NEEDS CHANGES"
+                condition: "{{quality_approved}} == 'false'"
                 agent: "superpowers:implementer"
                 prompt: |
                   CODE QUALITY FIX
@@ -251,7 +279,7 @@ stages:
 
           # --- 2c.1: Check if quality review exhausted without approval ---
           - id: "check-quality-resolution"
-            condition: "{{quality_verdict}} contains NEEDS CHANGES"
+            condition: "{{quality_approved}} == 'false'"
             agent: "superpowers:plan-writer"
             prompt: |
               WARNING: Quality review loop exhausted after 3 iterations without approval.
