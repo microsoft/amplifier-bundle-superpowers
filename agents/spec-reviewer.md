@@ -19,6 +19,7 @@ meta:
     <commentary>Spec compliance checking requires the spec-reviewer agent.</commentary>
     </example>
 
+  model_role: [critique, reasoning, general]
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main

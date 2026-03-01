@@ -19,6 +19,7 @@ meta:
     <commentary>Pre-merge quality checks are the code-quality-reviewer's domain.</commentary>
     </example>
 
+  model_role: [critique, reasoning, general]
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main

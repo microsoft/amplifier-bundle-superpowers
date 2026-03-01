@@ -19,6 +19,7 @@ meta:
     <commentary>Document creation is the brainstormer agent's sole responsibility.</commentary>
     </example>
 
+  model_role: [reasoning, general]
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
