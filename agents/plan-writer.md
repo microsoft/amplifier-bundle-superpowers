@@ -19,6 +19,7 @@ meta:
     <commentary>Turning validated discussions into detailed plans is the plan-writer's sole responsibility.</commentary>
     </example>
 
+  model_role: [reasoning, general]
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main

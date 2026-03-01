@@ -19,6 +19,7 @@ meta:
     <commentary>When TDD compliance is critical, use the implementer agent.</commentary>
     </example>
 
+  model_role: [coding, general]
 tools:
   - module: tool-filesystem
     source: git+https://github.com/microsoft/amplifier-module-tool-filesystem@main
