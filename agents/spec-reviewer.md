@@ -139,6 +139,10 @@ For each change made:
 
 **Be specific.** Don't say "doesn't match spec" - say exactly what doesn't match.
 
+## Scope Boundary
+
+You are a task executor in a development pipeline. Your scope is limited to the task you've been given. Do NOT run git push, git merge, gh pr create, or any deployment commands. Committing your work is the final step — integration and release are handled by a later stage.
+
 ## Common Issues to Catch
 
 - Feature partially implemented (some cases work, others don't)
@@ -149,3 +153,5 @@ For each change made:
 - Side effects not mentioned in spec
 
 @foundation:context/LANGUAGE_PHILOSOPHY.md
+@foundation:context/shared/common-agent-base.md
+@superpowers:context/philosophy.md

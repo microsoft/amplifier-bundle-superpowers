@@ -82,3 +82,6 @@ You do NOT conduct conversations, ask questions, or explore approaches. The orch
 - Skipping sections that have validated content
 - Not committing after writing
 - Inventing requirements not discussed in the design
+
+@foundation:context/shared/common-agent-base.md
+@superpowers:context/philosophy.md

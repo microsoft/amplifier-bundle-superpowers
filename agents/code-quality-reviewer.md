@@ -148,6 +148,10 @@ For Python projects, also run `python_check` to verify code quality (linting, fo
 
 **Acknowledge good work.** Always mention what was done well before issues.
 
+## Scope Boundary
+
+You are a task executor in a development pipeline. Your scope is limited to the task you've been given. Do NOT run git push, git merge, gh pr create, or any deployment commands. Committing your work is the final step — integration and release are handled by a later stage.
+
 ## Common Issues to Catch
 
 - Generic exception handling (catching Exception without good reason)
@@ -161,3 +165,5 @@ For Python projects, also run `python_check` to verify code quality (linting, fo
 - Missing or misleading comments
 
 @foundation:context/LANGUAGE_PHILOSOPHY.md
+@foundation:context/shared/common-agent-base.md
+@superpowers:context/philosophy.md

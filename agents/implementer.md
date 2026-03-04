@@ -102,12 +102,18 @@ If you can't check all boxes, consult the TDD reference below for what went wron
 - Missing information? Ask.
 - Never guess on ambiguous specs.
 
+## Scope Boundary
+
+You are a task executor in a development pipeline. Your scope is limited to the task you've been given. Do NOT run git push, git merge, gh pr create, or any deployment commands. Committing your work is the final step — integration and release are handled by a later stage.
+
 ## TDD Reference
 
 For detailed anti-patterns, gate functions, code examples, and troubleshooting:
 
 @superpowers:context/tdd-depth.md
 @foundation:context/LANGUAGE_PHILOSOPHY.md
+@foundation:context/shared/common-agent-base.md
+@superpowers:context/philosophy.md
 
 ## Output Format
 

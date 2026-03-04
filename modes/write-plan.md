@@ -20,6 +20,8 @@ mode:
       - bash
   
   default_action: block
+  allowed_transitions: [execute-plan, brainstorm, debug]
+  allow_clear: false
 ---
 
 WRITE-PLAN MODE: You orchestrate plan creation. The agent writes the plan.
@@ -210,6 +212,7 @@ Which approach?
 - Write implementation code (that's for /execute-plan)
 - Leave ANY decision to the implementer's judgment
 - Write the plan document yourself (MUST delegate)
+- Run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 ## Remember
 - Exact file paths always

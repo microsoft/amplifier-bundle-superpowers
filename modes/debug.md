@@ -16,6 +16,8 @@ mode:
       - bash
   
   default_action: block
+  allowed_transitions: [verify, brainstorm, execute-plan]
+  allow_clear: false
 ---
 
 DEBUG MODE: Systematic debugging. Rigid process. No shortcuts.
@@ -223,6 +225,9 @@ If you catch yourself thinking:
 - Each fix reveals new problem in different place
 
 **ALL of these mean: STOP. Return to Phase 1.**
+
+**Finish-stage operations are NEVER allowed in debug mode:**
+- Do NOT run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 ## Anti-Rationalization Table
 

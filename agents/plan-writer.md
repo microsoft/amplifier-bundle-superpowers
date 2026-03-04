@@ -133,3 +133,6 @@ Save plans to: `docs/plans/YYYY-MM-DD-<feature-name>.md`
 - Missing file paths or test verification steps
 - Skipping the TDD cycle
 - Adding content not discussed in the validated plan
+
+@foundation:context/shared/common-agent-base.md
+@superpowers:context/philosophy.md

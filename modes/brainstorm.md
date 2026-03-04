@@ -20,6 +20,8 @@ mode:
       - bash
   
   default_action: block
+  allowed_transitions: [write-plan, debug]
+  allow_clear: false
 ---
 
 BRAINSTORM MODE: You facilitate design refinement through collaborative dialogue.
@@ -145,6 +147,7 @@ Every project goes through this process. A todo list, a single-function utility 
 - Present the entire design in one message
 - Ask multiple questions per message
 - Write the design document yourself (MUST delegate)
+- Run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 ## Key Principles
 
@@ -172,7 +175,7 @@ When entering this mode, announce:
 **Dynamic transitions:**
 - If bug mentioned -> use `mode(operation='set', name='debug')` because systematic debugging has its own process
 - If already have a clear spec -> use `mode(operation='set', name='write-plan')` because design refinement isn't needed
-- If user wants to explore code first -> use `mode(operation='clear')` and use `foundation:explorer` because understanding the codebase should precede design
+- If user wants to explore code first -> stay in brainstorm, use available exploration and code intelligence agents (explorer, LSP agents, language-specific experts, repo-specific experts as available) to survey the codebase, then resume the design conversation
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
