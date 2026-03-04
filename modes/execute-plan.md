@@ -181,6 +181,7 @@ You are a state machine. Your states are:
 - Fix issues yourself instead of delegating to implementer
 - Skip spec-review or code-quality-review for any task
 - Proceed to the next task before both reviews pass
+- Run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 ## Operational Rules
 
@@ -208,10 +209,10 @@ All tasks implemented and reviewed via three-agent pipeline:
 
 Commits: [list of commits from implementer agents]
 
-Next: Run full test suite, then /mode off.
+Next: Run full test suite, then /verify.
 ```
 
-Use `/mode off` when execution is complete.
+Use `/verify` when execution is complete.
 
 ## Announcement
 

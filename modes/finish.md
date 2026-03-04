@@ -225,9 +225,10 @@ When entering this mode, announce:
 - Use `mode(operation='clear')` to exit modes.
 
 **Dynamic transitions:**
-- If tests failing → use `mode(operation='set', name='verify')` because tests must pass before completion
-- If unreviewed changes exist → use `mode(operation='set', name='verify')` because all changes need verification evidence
-- If user wants to add more work → use `mode(operation='clear')` because open-ended work doesn't need a mode
+- If tests failing → use `mode(operation='set', name='execute-plan')` because failing tests need to go through the implementation pipeline for fixes
+- If user wants more work on this project → use `mode(operation='set', name='brainstorm')` because new work needs the design process
+- If user wants to add more work on the current plan → use `mode(operation='set', name='execute-plan')` because additional tasks go through the execution pipeline
+- Session truly complete → use `mode(operation='clear')` to exit the development workflow
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.

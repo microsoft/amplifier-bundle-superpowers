@@ -151,6 +151,7 @@ If you catch yourself:
 - Thinking "just this once"
 - Tired and wanting the work to be over
 - Using ANY wording implying success without having run the command
+- Running git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 **ALL of these mean: STOP. Run the verification. Then speak.**
 

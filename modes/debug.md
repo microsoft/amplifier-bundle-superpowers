@@ -226,6 +226,9 @@ If you catch yourself thinking:
 
 **ALL of these mean: STOP. Return to Phase 1.**
 
+**Finish-stage operations are NEVER allowed in debug mode:**
+- Do NOT run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
+
 ## Anti-Rationalization Table
 
 | Your Excuse | Reality |

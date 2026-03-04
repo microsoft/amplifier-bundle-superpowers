@@ -212,6 +212,7 @@ Which approach?
 - Write implementation code (that's for /execute-plan)
 - Leave ANY decision to the implementer's judgment
 - Write the plan document yourself (MUST delegate)
+- Run git push, git merge, gh pr create, or any deployment/release commands — these belong exclusively to /finish mode
 
 ## Remember
 - Exact file paths always
