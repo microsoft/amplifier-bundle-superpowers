@@ -64,6 +64,17 @@ Run the project's test suite using the appropriate command (e.g., `pytest`, `npm
 
 For Python projects, also run `python_check` to verify code quality (linting, formatting, type checking).
 
+## CRITICAL: Save Findings to File (Compaction Resilience)
+
+Your context window will be compacted during long reviews, erasing file contents and tool output you gathered. To survive compaction:
+
+1. **Create a notes file early**: `write_file("/tmp/review-notes.md", "# Spec Review Notes\n")` at the start of your review.
+2. **Append findings as you go**: After each verification step, append results to your notes file (test outcomes, file change lists, requirement check results).
+3. **Read your notes instead of re-reading source files**: If you need to recall what you found, read `/tmp/review-notes.md` — not the original files again.
+4. **Write your verdict from your notes**: When ready to produce the final review, read your notes file and synthesize.
+
+**Loop detection**: If you notice you are reading the same source file more than twice, or loading the same skill more than twice, STOP. You are likely in a compaction amnesia loop. Read your notes file and write your verdict NOW with whatever evidence you have.
+
 ## Review Process
 
 ### 1. Gather Materials
