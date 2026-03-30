@@ -47,7 +47,9 @@ class TestUsingSuperPowersAmplifier:
         self.content = read_context("using-superpowers-amplifier.md")
 
     def test_has_the_rule(self):
-        assert "The Rule" in self.content
+        # "The Rule" content was moved to instructions.md during context compression
+        instructions = read_context("instructions.md")
+        assert "The Rule" in instructions
 
     def test_has_load_skill_reference(self):
         assert "load_skill()" in self.content
@@ -57,14 +59,18 @@ class TestUsingSuperPowersAmplifier:
         assert "mode" in self.content.lower()
 
     def test_has_skill_priority_rules(self):
+        # Skill priority rules were moved to instructions.md during context compression
+        instructions = read_context("instructions.md")
         assert (
-            "Process skills first" in self.content
-            or "Process skills FIRST" in self.content
+            "Process skills first" in instructions
+            or "Process skills FIRST" in instructions
         )
 
     def test_has_red_flags_table(self):
+        # Red Flags table was moved to instructions.md during context compression
         # Must have at least 12 rationalization rows in a table
-        table_rows = re.findall(r"^\|[^|]+\|[^|]+\|$", self.content, re.MULTILINE)
+        instructions = read_context("instructions.md")
+        table_rows = re.findall(r"^\|[^|]+\|[^|]+\|$", instructions, re.MULTILINE)
         # Subtract header and separator rows
         data_rows = [r for r in table_rows if not r.startswith("|-")]
         # Header row + 12 data rows minimum
