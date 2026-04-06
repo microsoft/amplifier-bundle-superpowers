@@ -157,6 +157,13 @@ stages:
                   End your review with exactly one of:
                   - "VERDICT: APPROVED" — spec fully implemented, nothing extra
                   - "VERDICT: NEEDS CHANGES — [list specific issues]"
+
+                  REVIEW CALIBRATION:
+                  If this is a re-review (you can see previous feedback in the implementation result),
+                  focus on whether the SPECIFIC ISSUES from the previous review were addressed.
+                  Do not introduce new stylistic concerns on re-review — only flag functional
+                  spec violations that remain unresolved. Minor style preferences do NOT warrant
+                  NEEDS CHANGES on a re-review.
                 output: "spec_verdict"
                 retry:
                   max_attempts: 3
@@ -182,9 +189,11 @@ stages:
                 condition: "{{spec_approved}} == 'false'"
                 agent: "superpowers:implementer"
                 prompt: |
-                  SPEC COMPLIANCE FIX
-                  ====================
+                  SPEC COMPLIANCE FIX (Iteration {{_loop_iteration}} of 3)
+                  =========================================================
                   The spec reviewer found issues with your implementation.
+                  This is review-fix iteration {{_loop_iteration}} of a maximum 3.
+                  After 3 attempts, remaining issues will be flagged for human review.
 
                   REVIEW FEEDBACK:
                   {{spec_verdict}}
@@ -192,7 +201,8 @@ stages:
                   ORIGINAL TASK:
                   {{current_task}}
 
-                  Fix ONLY the issues identified. Do not add anything else.
+                  Focus on the MOST CRITICAL issues first. Fix ONLY the issues identified.
+                  Do not add anything else. Do not refactor or improve beyond what was flagged.
                   Run tests after fixing. Commit your changes.
 
                   Return updated implementation results.
@@ -274,9 +284,11 @@ stages:
                 condition: "{{quality_approved}} == 'false'"
                 agent: "superpowers:implementer"
                 prompt: |
-                  CODE QUALITY FIX
-                  =================
+                  CODE QUALITY FIX (Iteration {{_loop_iteration}} of 3)
+                  ======================================================
                   The code quality reviewer found issues.
+                  This is review-fix iteration {{_loop_iteration}} of a maximum 3.
+                  After 3 attempts, remaining issues will be flagged for human review.
 
                   REVIEW FEEDBACK:
                   {{quality_verdict}}
@@ -284,8 +296,9 @@ stages:
                   ORIGINAL TASK:
                   {{current_task}}
 
-                  Fix ONLY the quality issues identified. Do NOT change spec behavior.
-                  Run tests after fixing. Commit your changes.
+                  Focus on CRITICAL and IMPORTANT issues only. Minor suggestions do not
+                  block approval. Fix ONLY the quality issues identified. Do NOT change
+                  spec behavior. Run tests after fixing. Commit your changes.
 
                   Return updated implementation results.
                 output: "task_implementation"
