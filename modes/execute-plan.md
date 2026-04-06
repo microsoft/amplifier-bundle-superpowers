@@ -170,6 +170,29 @@ The recipe handles foreach loops, approval gates, and progress tracking automati
 
 The subagent-driven-development recipe provides the highest quality guarantees. Use executing-plans when you need tight human oversight between batches or when tasks are tightly coupled and benefit from a single agent maintaining context across the batch.
 
+## Validating Externally-Completed Work
+
+When the work is already implemented (e.g., completed in another tool, pasted in, or from a prior interrupted session), use a **lighter validation pipeline** instead of the full three-agent pipeline:
+
+1. **Check if work exists**: Read the target files. If implementation matching the spec intent already exists and tests pass, route to validation mode.
+2. **Dispatch a single combined reviewer**: One reviewer checks both spec compliance AND code quality in a single pass. Instruct them to focus on FUNCTIONAL issues only — not stylistic preferences.
+3. **If the reviewer approves**: Mark task done. No implementer dispatch needed.
+4. **If the reviewer finds FUNCTIONAL issues**: Dispatch implementer for targeted fixes (max 2 iterations, not 3 — the work is mostly done).
+
+For multi-task validation, use the `validate-implementation` recipe instead:
+```
+recipes(operation="execute", recipe_path="@superpowers:recipes/validate-implementation.yaml", context={"plan_path": "docs/plans/YYYY-MM-DD-feature-plan.md"})
+```
+
+**When to use validation mode vs full pipeline:**
+
+| Situation | Use |
+|-----------|-----|
+| Task implemented from scratch | Full three-agent pipeline |
+| Code already exists, needs verification | Validation mode (single reviewer, max 2 fix iterations) |
+| Work from another AI tool (Claude Code, Cursor, etc.) | Validation mode |
+| Resuming interrupted implementation | Validation mode for completed tasks, full pipeline for remaining |
+
 ## Your Role: State Machine
 
 You are a state machine. Your states are:
@@ -232,6 +255,39 @@ These rules govern HOW you dispatch and manage sub-agents:
 6. **Never skip either review stage** — Even for "simple" or "obvious" tasks. The pipeline IS the process, regardless of perceived complexity.
 7. **Never accept "close enough" on spec compliance** — Missing requirement = fail. Extra feature = fail. Different behavior = fail.
 8. **Never rush a sub-agent past questions** — If the implementer asks for clarification, answer clearly and completely before re-dispatching.
+
+## Review Loop Limits (MANDATORY)
+
+Review loops are bounded to **3 iterations** per review stage. This matches the recipe's structural `max_while_iterations: 3`.
+
+After the 3rd review-fix cycle without an APPROVED verdict:
+
+1. **STOP the review loop.** Do not attempt a 4th iteration.
+2. **Compile issue history**: What was found in each iteration. What was fixed. What remains.
+3. **Present to user** with three options:
+   - **Accept with warnings**: Mark task done, flag unresolved issues in summary for human review at the end
+   - **Escalate for redesign**: Task may need restructuring — transition to `/brainstorm` or `/write-plan`
+   - **Skip and continue**: Defer this task, proceed to next, surface at summary
+
+The Three-Fix Escalation from shared-anti-rationalization.md is **mandatory, not advisory**, in this mode. Three review-fix cycles without convergence signals an architectural problem, not an implementation detail.
+
+**Track iteration count**: When delegating a fix back to the implementer after a failed review, note which iteration this is (e.g., "Spec fix attempt 2 of 3"). This gives the implementer urgency and focus.
+
+## Verification Scope
+
+The spec-reviewer and code-quality-reviewer ARE your verification for each task. You do NOT need to independently re-verify their verdicts.
+
+**VBC applies to STATUS CLAIMS about code correctness, not to PROCESS DECISIONS about workflow:**
+
+| Situation | VBC Applies? | Why |
+|-----------|-------------|-----|
+| "Tests pass" | YES — requires fresh evidence | Status claim about code |
+| "Bug is fixed" | YES — requires fresh evidence | Status claim about code |
+| "Task is complete" | YES — requires reviewer APPROVED or exhaustion-with-flags | Status claim |
+| "Review loop exhausted, escalating to human" | NO — this is a process decision | Not claiming success — reporting inability to converge |
+| "Accepting with warnings after 3 iterations" | NO — this is a process decision with explicit flags | Orchestrator states what was NOT approved |
+
+Escalating after exhaustion is not a completion claim — it's a process decision. VBC does not prevent you from making forward progress when loops don't converge.
 
 ## Completion
 
