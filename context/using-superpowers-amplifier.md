@@ -1,3 +1,11 @@
+<SUBAGENT-STOP>
+If you were dispatched via delegate() to execute a specific task —
+implementing code, reviewing a spec, checking code quality, debugging —
+skip the skill-check mandate below. You are a task executor in a pipeline.
+The orchestrator handles workflow decisions. Focus on your specific task.
+The instructions in your delegation contain everything you need.
+</SUBAGENT-STOP>
+
 # Using Superpowers in Amplifier
 
 <EXTREMELY-IMPORTANT>
