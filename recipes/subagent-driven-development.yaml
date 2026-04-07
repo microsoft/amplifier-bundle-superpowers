@@ -29,7 +29,7 @@
 
 name: "subagent-driven-development"
 description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
-version: "3.0.2"
+version: "3.1.0"
 author: "Superpowers Bundle"
 tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline"]
 
@@ -164,6 +164,10 @@ stages:
                   Do not introduce new stylistic concerns on re-review — only flag functional
                   spec violations that remain unresolved. Minor style preferences do NOT warrant
                   NEEDS CHANGES on a re-review.
+
+                  EXCEPTION: Critical bugs, security vulnerabilities, or data-safety issues
+                  introduced by the fix itself must always be flagged regardless of review
+                  iteration. This calibration applies to style preferences, not correctness.
                 output: "spec_verdict"
                 retry:
                   max_attempts: 3
