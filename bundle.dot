@@ -1,0 +1,88 @@
+digraph superpowers {
+    rankdir=LR
+    fontname="Helvetica"
+    fontsize=12
+    label="superpowers v1.0.0 — bundle repo"
+    labelloc=t
+    labeljust=c
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="5a6a836e317f03653f20bc3c396ec29134ae269cac9e7c49e57763f4529411f9"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    root_superpowers [label="superpowers v1.0.0\n0 tools · 0 agents\n~4057 tok aggregate", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", penwidth=2]
+
+    subgraph cluster_behaviors {
+        label="Behaviors"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        beh_superpowers_methodology_behavior [label="superpowers-methodology-behavior\n3 tools · 4 ctx\n~5682 tok", shape=box, fillcolor="#e0f2f1", style="filled,rounded"]
+    }
+
+    subgraph cluster_agents {
+        label="Agents"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        agt_brainstormer [label="brainstormer\n~176 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_code_quality_reviewer [label="code-quality-reviewer\n~164 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_code_reviewer [label="code-reviewer\n~298 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_implementer [label="implementer\n~171 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_plan_writer [label="plan-writer\n~183 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+        agt_spec_reviewer [label="spec-reviewer\n~169 tok desc", shape=box, fillcolor="#c8e6c9", style="filled,rounded"]
+    }
+
+    subgraph cluster_context {
+        label="Context Files"
+        style="filled"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        ctx_philosophy_md [label="philosophy.md\n~1444 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+        ctx_instructions_md [label="instructions.md\n~1464 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+        ctx_using_superpowers_amplifier_md [label="using-superpowers-amplifier.md\n~874 tok", shape=box, fillcolor="#e1bee7", style="filled,rounded"]
+    }
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=9
+
+        leg_root [label="root bundle", shape=box, fillcolor="#80cbc4", style="filled,rounded,bold", fontsize=9]
+        leg_behavior [label="behavior", shape=box, fillcolor="#e0f2f1", style="filled,rounded", fontsize=9]
+        leg_agent [label="agent", shape=box, fillcolor="#c8e6c9", style="filled,rounded", fontsize=9]
+        leg_module [label="module", shape=box, fillcolor="#bbdefb", style="filled,rounded", fontsize=9]
+        leg_provider [label="provider", shape=box, fillcolor="#e0e0e0", style="filled,rounded", fontsize=9]
+        leg_context [label="context", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_standalone [label="standalone", shape=box, fillcolor="#80cbc4", style="filled,rounded", fontsize=9]
+        leg_experiment [label="experiment", shape=box, fillcolor="#e1bee7", style="filled,rounded", fontsize=9]
+        leg_ext_cost [label="ext+cost", shape=box, fillcolor="#80cbc4", style="dashed", color="red", penwidth=2, fontsize=9]
+        leg_ext_muted [label="ext+no-cost", shape=box, fillcolor="#f5f5f5", style="dashed", fontsize=9]
+    }
+
+    disclaimer [label="Token estimates: ~4 chars/token\nSolid border = local (counted)\nDashed + red = external, hidden cost (not counted)\nDashed + muted = external, no cost\nExcludes: sub-session costs, runtime-dynamic", shape=note, fillcolor="#eceff1", style="filled", fontsize=9]
+
+    ext_githttps___github_com_microsoft_amplifier_foundation_main [label="amplifier-foundation\n(external, cost)", shape=box, fillcolor="#80cbc4", style="dashed", color="red", penwidth=2]
+
+    root_superpowers -> ext_githttps___github_com_microsoft_amplifier_foundation_main [style=dashed]
+    root_superpowers -> beh_superpowers_methodology_behavior [label="composes"]
+    beh_superpowers_methodology_behavior -> agt_implementer [label="owns"]
+    beh_superpowers_methodology_behavior -> agt_spec_reviewer [label="owns"]
+    beh_superpowers_methodology_behavior -> agt_code_quality_reviewer [label="owns"]
+    beh_superpowers_methodology_behavior -> agt_code_reviewer [label="owns"]
+    beh_superpowers_methodology_behavior -> agt_brainstormer [label="owns"]
+    beh_superpowers_methodology_behavior -> agt_plan_writer [label="owns"]
+    beh_superpowers_methodology_behavior -> ctx_philosophy_md [style=dotted, color=purple]
+    beh_superpowers_methodology_behavior -> ctx_instructions_md [style=dotted, color=purple]
+    beh_superpowers_methodology_behavior -> ctx_using_superpowers_amplifier_md [style=dotted, color=purple]
+    root_superpowers -> ctx_philosophy_md [style=dotted, color=purple]
+    root_superpowers -> ctx_instructions_md [style=dotted, color=purple]
+}

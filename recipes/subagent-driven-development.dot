@@ -1,0 +1,86 @@
+digraph subagent_driven_development {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Subagent Driven Development — Execute implementation plan with fresh agents per task and two-stage review (..."
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="3fbe4cc3a5ad27b1b6954b8e26500f3fdc2a8a82b208cfa826adf63e813f3bd9"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_task_execution {
+        label="Task Execution"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_load_plan [label="Load
+Plan", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_per_task_pipeline [label="Per Task
+Pipeline
+(for each)", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="per-task-pipeline"]
+        step_task_summary [label="Task
+Summary", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        start -> step_load_plan
+        step_load_plan -> step_per_task_pipeline
+        step_per_task_pipeline -> step_task_summary
+    }
+
+    gate_final_review [label="Human
+Approves?", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== FINAL REVIEW COMPLETE - HUMAN"]
+    step_task_summary -> gate_final_review
+    subgraph cluster_final_review {
+        label="Final Review"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_full_code_review [label="Full Code
+Review", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:code-quality-reviewer"]
+        step_prepare_approval [label="Prepare
+Approval", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+
+        gate_final_review -> step_full_code_review
+        step_full_code_review -> step_prepare_approval
+    }
+
+    subgraph cluster_finish {
+        label="Finish"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_verify_tests [label="Verify
+Tests", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_present_merge_options [label="Present Merge
+Options", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        step_prepare_approval -> step_verify_tests
+        step_verify_tests -> step_present_merge_options
+    }
+
+    step_present_merge_options -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}

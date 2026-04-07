@@ -1,0 +1,125 @@
+digraph finish_branch {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Finish Branch — Complete a development branch - verify tests, present options, execute choice..."
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="62e9c84546b23d692a61f3187514233031bff4e917c4bdf3fdbe2b993383fc9a"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_verify_and_summarize {
+        label="Verify And Summarize"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_detect_branch_info [label="Detect Branch
+Info", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_run_tests [label="Run
+Tests", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_summarize_changes [label="Summarize
+Changes", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:code-quality-reviewer"]
+
+        start -> step_detect_branch_info
+        step_detect_branch_info -> step_run_tests
+        step_run_tests -> step_summarize_changes
+    }
+
+    gate_option_selection [label="Human
+Approves?", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== SELECT YOUR OPTION =========="]
+    step_summarize_changes -> gate_option_selection
+    subgraph cluster_option_selection {
+        label="Option Selection"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_present_options [label="Present
+Options", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        gate_option_selection -> step_present_options
+    }
+
+    subgraph cluster_execute_choice {
+        label="Execute Choice"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_determine_choice [label="Determine
+Choice", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_merge [label="user_choice.selected_option...", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_merge [label="Execute
+Merge", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_pr [label="user_choice.selected_option...", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_pr [label="Execute
+Pr", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_keep [label="user_choice.selected_option...", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_keep [label="Execute
+Keep", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_discard [label="user_choice.selected_option...", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_discard [label="Execute
+Discard", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_handle_blocked_merge [label="user_choice.selected_option...", shape=diamond, fillcolor="#fff9c4"]
+        step_handle_blocked_merge [label="Handle Blocked
+Merge", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:spec-reviewer"]
+
+        step_present_options -> step_determine_choice
+        step_determine_choice -> cond_step_execute_merge
+        cond_step_execute_merge -> step_execute_merge [label="user_choice.selected_opti"]
+        step_determine_choice -> cond_step_execute_pr
+        cond_step_execute_pr -> step_execute_pr [label="user_choice.selected_opti"]
+        step_determine_choice -> cond_step_execute_keep
+        cond_step_execute_keep -> step_execute_keep [label="user_choice.selected_opti"]
+        step_determine_choice -> cond_step_execute_discard
+        cond_step_execute_discard -> step_execute_discard [label="user_choice.selected_opti"]
+        step_determine_choice -> cond_step_handle_blocked_merge
+        cond_step_handle_blocked_merge -> step_handle_blocked_merge [label="user_choice.selected_opti"]
+        cond_step_execute_merge -> done [label="skip", style=dashed]
+        cond_step_execute_pr -> done [label="skip", style=dashed]
+        cond_step_execute_keep -> done [label="skip", style=dashed]
+        cond_step_execute_discard -> done [label="skip", style=dashed]
+        cond_step_handle_blocked_merge -> done [label="skip", style=dashed]
+    }
+
+    subgraph cluster_cleanup {
+        label="Cleanup"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_cleanup_worktree [label="Cleanup
+Worktree", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_final_summary [label="Final
+Summary", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        step_determine_choice -> step_cleanup_worktree
+        step_cleanup_worktree -> step_final_summary
+    }
+
+    step_final_summary -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_cond [label="Condition", shape=diamond, fillcolor="#fff9c4"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_cond -> leg_gate -> leg_start [style=invis]
+    }
+}

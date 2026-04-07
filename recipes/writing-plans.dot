@@ -1,0 +1,73 @@
+digraph writing_plans {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Writing Plans — Create detailed implementation plans with bite-sized tasks (2-5 min each), TD..."
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="056429d461cb357b77e1c39c06e1312e2e6a9b1d38f08490fe0a66ed2c89cd5c"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    gate_planning [label="Human
+Approves?", shape=diamond, fillcolor="#ffe0b2", tooltip="**Implementation Plan Ready for Review**  The plan has been generated based on your design document."]
+    start -> gate_planning
+    subgraph cluster_planning {
+        label="Planning"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_load_design [label="Load
+Design", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_analyze_requirements [label="Analyze
+Requirements", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_create_plan [label="Create
+Plan", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        gate_planning -> step_load_design
+        step_load_design -> step_analyze_requirements
+        step_analyze_requirements -> step_create_plan
+    }
+
+    subgraph cluster_finalization {
+        label="Finalization"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_extract_metadata [label="Extract
+Metadata", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_save_plan [label="Save
+Plan", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_offer_execution [label="Offer
+Execution", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        step_create_plan -> step_extract_metadata
+        step_extract_metadata -> step_save_plan
+        step_save_plan -> step_offer_execution
+    }
+
+    step_offer_execution -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}

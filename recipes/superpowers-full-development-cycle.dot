@@ -1,0 +1,139 @@
+digraph superpowers_full_development_cycle {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Superpowers Full Development Cycle — Complete development workflow from idea to merged code, composing all Superpo..."
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="5728b33498a111f572e738eea1858588ef5c5eb4d62e2344697b74e7e156bd65"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_design {
+        label="Design"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_setup_paths [label="Setup
+Paths", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="DATE=$(date +%Y-%m-%d) FEATURE_SLUG=$(echo '{{feature_name}}' | tr ' ' '-' | tr '[:upper:]' '[:lower"]
+        step_ensure_dirs [label="Ensure
+Dirs", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="set -e mkdir -p '{{project_path}}/docs/plans' echo 'Created docs/plans directory' "]
+        step_understand_context [label="Understand
+Context", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_explore_requirements [label="Explore
+Requirements", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_create_design [label="Create
+Design", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_save_design [label="Save
+Design", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="cat > '{{project_path}}/{{paths.design_path}}' << 'DESIGN_EOF' {{design_content}} DESIGN_EOF echo 'S"]
+        step_present_design [label="Present
+Design", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+
+        start -> step_setup_paths
+        step_setup_paths -> step_ensure_dirs
+        step_ensure_dirs -> step_understand_context
+        step_understand_context -> step_explore_requirements
+        step_explore_requirements -> step_create_design
+        step_create_design -> step_save_design
+        step_save_design -> step_present_design
+    }
+
+    subgraph cluster_planning {
+        label="Planning"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_load_design [label="Load
+Design", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="cat '{{project_path}}/{{paths.design_path}}' "]
+        step_create_plan [label="Create
+Plan", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_save_plan [label="Save
+Plan", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="cat > '{{project_path}}/{{paths.plan_path}}' << 'PLAN_EOF' {{plan_content}} PLAN_EOF echo 'Saved pla"]
+        step_present_plan [label="Present
+Plan", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        step_present_design -> step_load_design
+        step_load_design -> step_create_plan
+        step_create_plan -> step_save_plan
+        step_save_plan -> step_present_plan
+    }
+
+    subgraph cluster_implementation {
+        label="Implementation"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_create_worktree [label="Create
+Worktree", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_load_plan [label="Load
+Plan", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="cat '{{project_path}}/{{paths.plan_path}}' "]
+        step_execute_plan [label="Execute
+Plan
+(sub-recipe)", shape=box, fillcolor="#e0e0e0", style="filled,rounded,dashed", tooltip="execute-plan"]
+        step_check_for_errors [label="Check For
+Errors", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="if [ -n '{{implementation_result}}' ]; then   echo '{'has_error': false}' else   echo '{'has_error':"]
+        cond_step_debug_if_needed [label="error_check.has_error == true", shape=diamond, fillcolor="#fff9c4"]
+        step_debug_if_needed [label="Debug If
+Needed", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:bug-hunter"]
+        step_verify_implementation [label="Verify
+Implementation", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:spec-reviewer"]
+        step_present_implementation [label="Present
+Implementation", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="cd '{{project_path}}/worktrees/{{paths.feature_slug}}' && \\ echo '=== Implementation Summary ===' &&"]
+
+        step_present_plan -> step_create_worktree
+        step_create_worktree -> step_load_plan
+        step_load_plan -> step_execute_plan
+        step_execute_plan -> step_check_for_errors
+        step_check_for_errors -> cond_step_debug_if_needed
+        cond_step_debug_if_needed -> step_debug_if_needed [label="error_check.has_error == "]
+        step_check_for_errors -> step_verify_implementation
+        step_verify_implementation -> step_present_implementation
+        cond_step_debug_if_needed -> step_verify_implementation [label="skip", style=dashed]
+    }
+
+    subgraph cluster_finish {
+        label="Finish"
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_determine_action [label="Determine
+Action", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="set -e ACTION='{{_approval_message}}' if [ -z '$ACTION' ]; then   ACTION='pr' fi echo '{\\'action\\': "]
+        step_execute_finish [label="Execute
+Finish", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_final_summary [label="Final
+Summary", shape=box, fillcolor="#bbdefb", style="filled,rounded", tooltip="echo '============================================' echo '  SUPERPOWERS DEVELOPMENT CYCLE COMPLETE' "]
+
+        step_present_implementation -> step_determine_action
+        step_determine_action -> step_execute_finish
+        step_execute_finish -> step_final_summary
+    }
+
+    step_final_summary -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_bash [label="Script Step", shape=box, fillcolor="#bbdefb"]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_sub [label="Sub-Recipe Call", shape=box, fillcolor="#e0e0e0", style="filled,rounded,dashed"]
+        leg_cond [label="Condition", shape=diamond, fillcolor="#fff9c4"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_bash -> leg_agent -> leg_sub -> leg_cond -> leg_start [style=invis]
+    }
+}
