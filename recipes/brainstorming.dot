@@ -1,0 +1,67 @@
+// This recipe helps you turn a rough idea into a polished design by talking it through step by step.
+digraph brainstorming {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Brainstorming\nTalk through a rough idea and shape it into a clear, detailed design"
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="72e18a66bc88665331c5dcd1cdf7470e370e7098bd062318a4fb3ebf17a8d70e"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    gate_discovery_and_design [label="Human\nApproves?\n\"Does this design look right?\"", shape=diamond, fillcolor="#ffe0b2", tooltip="The design document is ready for your final review.  Please review the complete design above and: - "]
+    start -> gate_discovery_and_design
+    subgraph cluster_discovery_and_design {
+        label="Discovery & Design\n\"Shape the idea into a plan\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_understand_context [label="Look Around\n\"What's in this project?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_explore_requirements [label="Refine the Idea\n\"What exactly do you need?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_explore_approaches [label="Explore Options\n\"How could we build this?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_present_design [label="Present the Design\n\"Here's the full plan\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+
+        gate_discovery_and_design -> step_understand_context
+        step_understand_context -> step_explore_requirements
+        step_explore_requirements -> step_explore_approaches
+        step_explore_approaches -> step_present_design
+    }
+
+    subgraph cluster_finalization {
+        label="Wrap Up\n\"Save it and hand it off\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_save_design [label="Save the Design\n\"Write it down for later\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+        step_handoff [label="Next Steps\n\"Ready to build?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:brainstormer"]
+
+        step_present_design -> step_save_design
+        step_save_design -> step_handoff
+    }
+
+    step_handoff -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}

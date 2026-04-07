@@ -1,0 +1,113 @@
+// Finishes a development branch — runs tests, shows you your options, and wraps everything up.
+digraph finish_branch {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Finish Branch\nRun tests, pick how to wrap up your work, and clean up after"
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="62e9c84546b23d692a61f3187514233031bff4e917c4bdf3fdbe2b993383fc9a"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_verify_and_summarize {
+        label="Check Your Work\n\"Is everything ready?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_detect_branch_info [label="Find Your Branch\n\"Where are we working?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_run_tests [label="Run All Tests\n\"Does everything pass?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_summarize_changes [label="Summarize Changes\n\"What did we build?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:code-quality-reviewer"]
+
+        start -> step_detect_branch_info
+        step_detect_branch_info -> step_run_tests
+        step_run_tests -> step_summarize_changes
+    }
+
+    gate_option_selection [label="Human Approves?\n\"Pick your option\"", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== SELECT YOUR OPTION =========="]
+    step_summarize_changes -> gate_option_selection
+    subgraph cluster_option_selection {
+        label="Your Decision\n\"What would you like to do?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_present_options [label="Show Your Options\n\"Here's what you can do\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        gate_option_selection -> step_present_options
+    }
+
+    subgraph cluster_execute_choice {
+        label="Carry Out Your Choice\n\"Making it happen\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_determine_choice [label="Read Your Choice\n\"What did you pick?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_merge [label="Chose\nMerge?", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_merge [label="Merge Into Main\n\"Combine your work\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_pr [label="Chose\nPull Request?", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_pr [label="Open Pull Request\n\"Request a code review\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_keep [label="Chose\nKeep?", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_keep [label="Keep the Branch\n\"Leave it for later\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_execute_discard [label="Chose\nDiscard?", shape=diamond, fillcolor="#fff9c4"]
+        step_execute_discard [label="Delete the Branch\n\"Throw it away\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        cond_step_handle_blocked_merge [label="Merge\nBlocked?", shape=diamond, fillcolor="#fff9c4"]
+        step_handle_blocked_merge [label="Explain Why Merge\nIs Blocked", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:spec-reviewer"]
+
+        step_present_options -> step_determine_choice
+        step_determine_choice -> cond_step_execute_merge
+        cond_step_execute_merge -> step_execute_merge [label="Yes"]
+        step_determine_choice -> cond_step_execute_pr
+        cond_step_execute_pr -> step_execute_pr [label="Yes"]
+        step_determine_choice -> cond_step_execute_keep
+        cond_step_execute_keep -> step_execute_keep [label="Yes"]
+        step_determine_choice -> cond_step_execute_discard
+        cond_step_execute_discard -> step_execute_discard [label="Yes"]
+        step_determine_choice -> cond_step_handle_blocked_merge
+        cond_step_handle_blocked_merge -> step_handle_blocked_merge [label="Yes"]
+        cond_step_execute_merge -> done [label="No", style=dashed]
+        cond_step_execute_pr -> done [label="No", style=dashed]
+        cond_step_execute_keep -> done [label="No", style=dashed]
+        cond_step_execute_discard -> done [label="No", style=dashed]
+        cond_step_handle_blocked_merge -> done [label="No", style=dashed]
+    }
+
+    subgraph cluster_cleanup {
+        label="Wrap Up\n\"Tidy everything up\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_cleanup_worktree [label="Clean Up Files\n\"Remove temp workspace\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_final_summary [label="Show What Happened\n\"Here's the recap\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        step_determine_choice -> step_cleanup_worktree
+        step_cleanup_worktree -> step_final_summary
+    }
+
+    step_final_summary -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_cond [label="Condition", shape=diamond, fillcolor="#fff9c4"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_cond -> leg_gate -> leg_start [style=invis]
+    }
+}

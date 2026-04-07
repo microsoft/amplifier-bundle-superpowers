@@ -1,0 +1,98 @@
+// Sets up a safe, isolated copy of your project so you can start building a new feature without affecting anything else.
+digraph git_worktree_setup {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Feature Branch Setup\nCreates a safe, isolated copy of your project for new work"
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="7854d628557ccacc566c332fc919c085609f1a6166185a428714a39de7d96f71"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_discovery {
+        label="Discovery\n\"Where should we set up?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_check_existing_dirs [label="Look for Existing\nWork Folders", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_determine_location [label="Pick the Best\nFolder Location", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+        step_verify_gitignore [label="Make Sure the Folder\nWon't Get Committed", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+
+        start -> step_check_existing_dirs
+        step_check_existing_dirs -> step_determine_location
+        step_determine_location -> step_verify_gitignore
+    }
+
+    subgraph cluster_worktree_creation {
+        label="Branch Creation\n\"Make the working copy\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_create_worktree [label="Create a Fresh\nWorking Copy", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+
+        step_verify_gitignore -> step_create_worktree
+    }
+
+    subgraph cluster_project_setup {
+        label="Project Setup\n\"Get it ready to use\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_detect_project_type [label="Figure Out the\nProject Type", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_run_setup [label="Install Everything\nthe Project Needs", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+
+        step_create_worktree -> step_detect_project_type
+        step_detect_project_type -> step_run_setup
+    }
+
+    gate_baseline_verification [label="Human Approves?\n\"Ready to run tests?\"", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== BASELINE TEST VERIFICATION - "]
+    step_run_setup -> gate_baseline_verification
+    subgraph cluster_baseline_verification {
+        label="Health Check\n\"Does everything pass?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_run_baseline_tests [label="Run Tests to Confirm\nEverything Works", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+
+        gate_baseline_verification -> step_run_baseline_tests
+    }
+
+    subgraph cluster_completion {
+        label="Wrap-Up\n\"Report what happened\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_generate_report [label="Write Up a Summary\nof What Was Done", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:git-ops"]
+
+        step_run_baseline_tests -> step_generate_report
+    }
+
+    step_generate_report -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}
