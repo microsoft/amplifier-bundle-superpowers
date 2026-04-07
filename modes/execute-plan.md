@@ -93,13 +93,14 @@ Review for code quality: best practices, no unnecessary complexity, meaningful t
 
 If the quality-reviewer reports FAIL → DELEGATE back to implementer with the fix instructions. DO NOT fix it yourself.
 
-Only after BOTH reviewers PASS do you move to the next task.
+Only after BOTH reviewers PASS do you move to the next task (see Review Loop Limits if reviews aren't converging).
 
 ## When You're Tempted to Skip the Pipeline
 
 If you find yourself wanting to skip delegation or do something directly, pause and
-consider why. For a structured discipline check, load the skill:
-    load_skill(skill_name="execute-plan-discipline")
+consider why. For guidance on evaluating whether to push back on reviewer
+findings, load the skill:
+    load_skill(skill_name="receiving-code-review")
 
 That said, you ARE expected to exercise judgment. If a reviewer is flagging trivial
 style preferences rather than functional issues, that's legitimate signal — see
@@ -166,9 +167,9 @@ The subagent-driven-development recipe provides the highest quality guarantees. 
 When the work is already implemented (e.g., completed in another tool, pasted in, or from a prior interrupted session), use a **lighter validation pipeline** instead of the full three-agent pipeline:
 
 1. **Check if work exists**: Read the target files. If implementation matching the spec intent already exists and tests pass, route to validation mode.
-2. **Dispatch a single combined reviewer**: One reviewer checks both spec compliance AND code quality in a single pass. Instruct them to focus on FUNCTIONAL issues only — not stylistic preferences.
+2. **Dispatch spec-reviewer then code-quality-reviewer in sequence**: Each does a single-pass review focused on FUNCTIONAL issues only — not stylistic preferences. No fix loops — findings go to your summary.
 3. **If the reviewer approves**: Mark task done. No implementer dispatch needed.
-4. **If the reviewer finds FUNCTIONAL issues**: Dispatch implementer for targeted fixes (max 2 iterations, not 3 — the work is mostly done).
+4. **If reviewers find FUNCTIONAL issues**: Present the findings to the user. They decide whether to fix (via SDD pipeline on those specific tasks) or accept with the issues noted.
 
 For multi-task validation, use the `validate-implementation` recipe instead:
 ```
@@ -243,7 +244,7 @@ These rules govern HOW you dispatch and manage sub-agents:
 3. **Never start quality review before spec review passes** — The ordering is: implement → spec-review (until APPROVED) → THEN quality-review. Never skip ahead.
 4. **Never fix issues yourself instead of delegating** — If a reviewer finds problems, delegate back to the implementer with fix instructions. You are the orchestrator.
 5. **Both reviews should pass before moving to the next task** — If reviews aren't converging after 3 iterations, use your judgment: escalate to the user with options (accept with warnings, redesign, or skip). See the Review Loop Limits section.
-6. **Both review stages provide value for every task** — If a task genuinely doesn't warrant full review (e.g., renaming a variable), you may note that in your delegation, but both stages should still run.
+6. **Both review stages provide value for every task** — For full-pipeline tasks, both spec-review and quality-review should run. For externally-completed work, see the Validating Externally-Completed Work section for the lighter path.
 7. **Spec compliance matters** — Missing requirements and extra features are legitimate review findings. However, if a reviewer is flagging style preferences as spec violations, load `receiving-code-review` to evaluate whether the feedback is substantive.
 8. **Never rush a sub-agent past questions** — If the implementer asks for clarification, answer clearly and completely before re-dispatching.
 
