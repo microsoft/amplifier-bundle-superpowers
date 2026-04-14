@@ -89,7 +89,28 @@ stages:
         as: "current_task"
         on_error: "continue"
         steps:
-          # --- 2.0: Initialize pipeline variables (prevents undefined var errors) ---
+          # --- 2.0a: Check if task already completed (checkpoint) ---
+          - id: "check-checkpoint"
+            type: "bash"
+            timeout: 30
+            command: |
+              TASK_ID=$(cat <<'TASKID_DELIM' | tr -d '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+              {{current_task.task_id}}
+              TASKID_DELIM
+              )
+              if [ -f ".superpowers-checkpoint.json" ] && python3 -c "
+              import json, sys
+              with open('.superpowers-checkpoint.json') as f:
+                  data = json.load(f)
+              sys.exit(0 if '$TASK_ID' in data.get('completed_tasks', []) else 1)
+              " 2>/dev/null; then
+                echo "true"
+              else
+                echo "false"
+              fi
+            output: "task_already_done"
+
+          # --- 2.0b: Initialize pipeline variables (prevents undefined var errors) ---
           - id: "init-impl-status"
             type: "bash"
             timeout: 10
@@ -122,6 +143,7 @@ stages:
 
           # --- 2a: Implement the task ---
           - id: "implement"
+            condition: "{{task_already_done}} != 'true'"
             agent: "superpowers:implementer"
             prompt: |
               SUBAGENT IMPLEMENTATION TASK
@@ -165,6 +187,7 @@ stages:
 
           # --- 2a.1: Extract implementer status ---
           - id: "extract-status"
+            condition: "{{task_already_done}} != 'true'"
             type: "bash"
             timeout: 30
             command: |
@@ -408,6 +431,31 @@ stages:
               Flag this task as having unresolved quality issues. Include this warning
               in the task summary so the human reviewer is aware during the approval gate.
             output: "quality_unresolved"
+
+          # --- 2d: Write checkpoint after successful task completion ---
+          - id: "write-checkpoint"
+            condition: "{{impl_status}} == 'DONE' or {{impl_status}} == 'DONE_WITH_CONCERNS'"
+            type: "bash"
+            timeout: 30
+            command: |
+              TASK_ID=$(cat <<'TASKID_DELIM' | tr -d '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+              {{current_task.task_id}}
+              TASKID_DELIM
+              )
+              if [ ! -f ".superpowers-checkpoint.json" ]; then
+                echo '{"completed_tasks": []}' > .superpowers-checkpoint.json
+              fi
+              python3 -c "
+              import json
+              with open('.superpowers-checkpoint.json', 'r') as f:
+                  data = json.load(f)
+              task_id = '$TASK_ID'
+              if task_id not in data.get('completed_tasks', []):
+                  data.setdefault('completed_tasks', []).append(task_id)
+              with open('.superpowers-checkpoint.json', 'w') as f:
+                  json.dump(data, f, indent=2)
+              print(f'Checkpoint saved: {task_id}')
+              "
 
         collect: "completed_tasks"
 
