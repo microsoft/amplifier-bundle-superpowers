@@ -29,12 +29,13 @@
 
 name: "subagent-driven-development"
 description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
-version: "3.1.0"
+version: "4.0.0"
 author: "Superpowers Bundle"
-tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline"]
+tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline", "checkpoint", "tiered-review"]
 
 context:
   plan_path: ""  # Required: Path to the implementation plan file
+  task_parallelism: false  # Set to 2 or 3 to enable bounded parallel task execution
 
 stages:
   # ============================================================================
@@ -77,6 +78,7 @@ stages:
           IMPORTANT: Preserve ALL spec details - they are critical for review.
         output: "plan_data"
         parse_json: true
+        timeout: 600
 
       # -----------------------------------------------------------------------
       # Step 2: Per-Task Pipeline (implement -> spec-review -> quality-review)
@@ -85,6 +87,7 @@ stages:
       - id: "per-task-pipeline"
         foreach: "{{plan_data.tasks}}"
         as: "current_task"
+        on_error: "continue"
         steps:
           # --- 2a: Implement the task ---
           - id: "implement"
@@ -122,6 +125,7 @@ stages:
               - implementation_notes: Key decisions or notes
               - spec_coverage: How each spec requirement was addressed
             output: "task_implementation"
+            timeout: 3600
             retry:
               max_attempts: 3
               backoff: exponential
@@ -169,6 +173,7 @@ stages:
                   introduced by the fix itself must always be flagged regardless of review
                   iteration. This calibration applies to style preferences, not correctness.
                 output: "spec_verdict"
+                timeout: 600
                 retry:
                   max_attempts: 3
                   backoff: exponential
@@ -178,6 +183,7 @@ stages:
               # Extract a safe boolean from the raw markdown verdict
               - id: "extract-spec-verdict"
                 type: "bash"
+                timeout: 30
                 command: |
                   if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
                   {{spec_verdict}}
@@ -211,6 +217,7 @@ stages:
 
                   Return updated implementation results.
                 output: "task_implementation"
+                timeout: 3600
                 retry:
                   max_attempts: 3
                   backoff: exponential
@@ -221,6 +228,7 @@ stages:
           - id: "check-spec-resolution"
             condition: "{{spec_approved}} == 'false'"
             agent: "superpowers:plan-writer"
+            timeout: 120
             prompt: |
               WARNING: Spec review loop exhausted after 3 iterations without approval.
               Task: {{current_task}}
@@ -264,6 +272,7 @@ stages:
                   Minor/suggestion issues do NOT block approval.
                   Only critical and major issues require NEEDS CHANGES.
                 output: "quality_verdict"
+                timeout: 600
                 retry:
                   max_attempts: 3
                   backoff: exponential
@@ -273,6 +282,7 @@ stages:
               # Extract a safe boolean from the raw markdown verdict
               - id: "extract-quality-verdict"
                 type: "bash"
+                timeout: 30
                 command: |
                   if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
                   {{quality_verdict}}
@@ -306,6 +316,7 @@ stages:
 
                   Return updated implementation results.
                 output: "task_implementation"
+                timeout: 3600
                 retry:
                   max_attempts: 3
                   backoff: exponential
@@ -316,6 +327,7 @@ stages:
           - id: "check-quality-resolution"
             condition: "{{quality_approved}} == 'false'"
             agent: "superpowers:plan-writer"
+            timeout: 120
             prompt: |
               WARNING: Quality review loop exhausted after 3 iterations without approval.
               Task: {{current_task}}
@@ -332,6 +344,7 @@ stages:
       # -----------------------------------------------------------------------
       - id: "task-summary"
         agent: "superpowers:plan-writer"
+        timeout: 120
         prompt: |
           TASK EXECUTION SUMMARY
           ======================
@@ -372,6 +385,7 @@ stages:
     steps:
       - id: "full-code-review"
         agent: "superpowers:code-quality-reviewer"
+        timeout: 600
         prompt: |
           FINAL COMPREHENSIVE CODE REVIEW
           ================================
@@ -440,6 +454,7 @@ stages:
 
       - id: "prepare-approval"
         agent: "superpowers:implementer"
+        timeout: 600
         prompt: |
           Prepare for human approval checkpoint.
 
@@ -493,6 +508,7 @@ stages:
     steps:
       - id: "verify-tests"
         agent: "superpowers:implementer"
+        timeout: 600
         prompt: |
           FINAL VERIFICATION
           ==================
@@ -527,6 +543,7 @@ stages:
       - id: "present-merge-options"
         agent: "foundation:zen-architect"
         mode: "ARCHITECT"
+        timeout: 600
         prompt: |
           IMPLEMENTATION COMPLETE - MERGE OPTIONS
           =======================================
