@@ -236,6 +236,37 @@ stages:
               CONCERN_DELIM
             output: "observation_notes"
 
+          # --- 2a.4: Classify task complexity for tiered review ---
+          - id: "classify-tier"
+            condition: "{{impl_status}} != 'BLOCKED' and {{impl_status}} != 'SKIP'"
+            type: "bash"
+            timeout: 30
+            command: |
+              FILE_COUNT=$(cat <<'FILES_DELIM' | python3 -c "
+              import json, sys
+              data = sys.stdin.read().strip()
+              try:
+                  files = json.loads(data)
+                  print(len(files) if isinstance(files, list) else 1)
+              except Exception:
+                  print(len([l for l in data.splitlines() if l.strip()]))
+              "
+              {{current_task.files}}
+              FILES_DELIM
+              )
+              SPEC_WORDS=$(cat <<'SPEC_DELIM' | wc -w
+              {{current_task.spec}}
+              SPEC_DELIM
+              )
+              if [ "$FILE_COUNT" -le 1 ] && [ "$SPEC_WORDS" -lt 50 ]; then
+                echo "trivial"
+              elif [ "$FILE_COUNT" -le 5 ]; then
+                echo "standard"
+              else
+                echo "complex"
+              fi
+            output: "review_tier"
+
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
             condition: "{{impl_status}} != 'BLOCKED'"
