@@ -179,8 +179,32 @@ stages:
               fi
             output: "impl_status"
 
+          # --- 2a.2: BLOCKED → immediate human flag ---
+          - id: "blocked-flag"
+            condition: "{{impl_status}} == 'BLOCKED'"
+            agent: "superpowers:plan-writer"
+            timeout: 120
+            provider_preferences:
+              - class: fast
+            prompt: |
+              BLOCKED TASK — HUMAN INTERVENTION NEEDED
+              ==========================================
+              Task {{current_task.task_id}} reported BLOCKED status.
+
+              IMPLEMENTER REPORT:
+              {{task_implementation}}
+
+              Format a clear, concise summary of:
+              1. Which task is blocked (task_id and description)
+              2. What the specific blocker is
+              3. What information or action the human needs to provide
+
+              This is a flag for the human operator — keep it short and actionable.
+            output: "blocked_flag"
+
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
+            condition: "{{impl_status}} != 'BLOCKED'"
             while_condition: "true"
             break_when: "{{spec_approved}} == 'true'"
             max_while_iterations: 3
@@ -287,6 +311,7 @@ stages:
 
           # --- 2c: Code quality review loop ---
           - id: "quality-review-loop"
+            condition: "{{impl_status}} != 'BLOCKED'"
             while_condition: "true"
             break_when: "{{quality_approved}} == 'true'"
             max_while_iterations: 3
