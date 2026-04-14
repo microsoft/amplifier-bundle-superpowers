@@ -49,6 +49,8 @@ stages:
       # -----------------------------------------------------------------------
       - id: "load-plan"
         agent: "superpowers:plan-writer"
+        provider_preferences:
+          - class: fast
         prompt: |
           Load the implementation plan from: {{plan_path}}
 
@@ -370,6 +372,8 @@ stages:
             condition: "{{spec_approved}} == 'false'"
             agent: "superpowers:plan-writer"
             timeout: 120
+            provider_preferences:
+              - class: fast
             prompt: |
               WARNING: Spec review loop exhausted after 3 iterations without approval.
               Task: {{current_task}}
@@ -514,6 +518,8 @@ stages:
             condition: "{{quality_approved}} == 'false'"
             agent: "superpowers:plan-writer"
             timeout: 120
+            provider_preferences:
+              - class: fast
             prompt: |
               WARNING: Quality review loop exhausted after 3 iterations without approval.
               Task: {{current_task}}
@@ -556,6 +562,8 @@ stages:
       - id: "task-summary"
         agent: "superpowers:plan-writer"
         timeout: 120
+        provider_preferences:
+          - class: fast
         prompt: |
           TASK EXECUTION SUMMARY
           ======================
@@ -666,6 +674,8 @@ stages:
       - id: "prepare-approval"
         agent: "superpowers:implementer"
         timeout: 600
+        provider_preferences:
+          - class: fast
         prompt: |
           Prepare for human approval checkpoint.
 
@@ -755,6 +765,8 @@ stages:
         agent: "foundation:zen-architect"
         mode: "ARCHITECT"
         timeout: 600
+        provider_preferences:
+          - class: fast
         prompt: |
           IMPLEMENTATION COMPLETE - MERGE OPTIONS
           =======================================
