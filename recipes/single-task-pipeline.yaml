@@ -1,0 +1,530 @@
+# Single Task Pipeline
+# Per-task implementation pipeline extracted from subagent-driven-development.yaml
+# to enable bounded parallelism via foreach + type: recipe.
+#
+# This recipe executes: implement → status extract → review → checkpoint
+# for a single task. The parent recipe invokes it once per task.
+#
+# Context variables received from parent:
+#   current_task: The task object with task_id, description, spec, etc.
+#   project_brief: Auto-generated project context (may be empty for first task)
+
+name: "single-task-pipeline"
+description: "Per-task implementation pipeline: implement → status extract → tiered review → checkpoint"
+version: "1.0.0"
+author: "Superpowers Bundle"
+tags: ["implementation", "per-task", "pipeline", "tdd", "review"]
+
+context:
+  current_task: {}
+  project_brief: ""
+  # Pipeline variable defaults (prevent undefined variable errors)
+  impl_status: "SKIP"
+  review_tier: "trivial"
+  spec_approved: "true"
+  quality_approved: "true"
+  observation_notes: "(none)"
+  task_already_done: "false"
+
+steps:
+  # --- 2.0a: Check if task already completed (checkpoint) ---
+  - id: "check-checkpoint"
+    type: "bash"
+    timeout: 30
+    command: |
+      TASK_ID=$(cat <<'TASKID_DELIM' | tr -d '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+      {{current_task.task_id}}
+      TASKID_DELIM
+      )
+      if [ -f ".superpowers-checkpoint.json" ] && python3 -c "
+      import json, sys
+      with open('.superpowers-checkpoint.json') as f:
+          data = json.load(f)
+      sys.exit(0 if '$TASK_ID' in data.get('completed_tasks', []) else 1)
+      " 2>/dev/null; then
+        echo "true"
+      else
+        echo "false"
+      fi
+    output: "task_already_done"
+
+  - id: "load-project-brief"
+    type: "bash"
+    timeout: 10
+    command: |
+      if [ -f ".superpowers-project-brief.txt" ]; then
+        cat .superpowers-project-brief.txt
+      else
+        echo ""
+      fi
+    output: "project_brief"
+
+  # --- 2a: Implement the task ---
+  - id: "implement"
+    condition: "{{task_already_done}} != 'true'"
+    agent: "superpowers:implementer"
+    prompt: |
+      SUBAGENT IMPLEMENTATION TASK
+      ============================
+
+      You are a fresh agent assigned to implement ONE specific task.
+      Focus ONLY on this task. Do not consider other tasks.
+
+      TASK TO IMPLEMENT:
+      Task ID: {{current_task.task_id}}
+      Description: {{current_task.description}}
+      Specification: {{current_task.spec}}
+      Acceptance Criteria: {{current_task.acceptance_criteria}}
+      Files: {{current_task.files}}
+
+      PROJECT BRIEF (read-only reference from prior tasks):
+      {{project_brief}}
+
+      IMPLEMENTATION REQUIREMENTS:
+      1. FOLLOW TDD (Test-Driven Development):
+         - Write failing tests FIRST based on the spec
+         - Implement code to make tests pass
+         - Refactor if needed while keeping tests green
+      2. FOLLOW THE SPEC EXACTLY:
+         - Implement exactly what the spec says
+         - Do not add features not in the spec
+         - Do not skip any spec requirements
+      3. VERIFY BEFORE COMPLETING:
+         - Run the tests you wrote
+         - Confirm they pass
+         - Commit your changes
+
+      OUTPUT FORMAT (first line MUST be the status):
+      STATUS: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+      - task_id: {{current_task.task_id}}
+      - files_changed: [list of files created/modified]
+      - tests_written: [list of test files/functions]
+      - test_results: PASS (N/N) or FAIL (details)
+      - concerns: (if DONE_WITH_CONCERNS, list specific concerns here)
+      - blocker: (if BLOCKED, describe what prevents completion)
+
+      Use STATUS: DONE when task is complete and all tests pass.
+      Use STATUS: DONE_WITH_CONCERNS when complete but you noticed issues worth flagging.
+      Use STATUS: BLOCKED when you cannot proceed (missing dependency, failing prereq).
+      Use STATUS: NEEDS_CONTEXT when you need information not provided.
+    output: "task_implementation"
+    timeout: 3600
+    retry:
+      max_attempts: 3
+      backoff: exponential
+      initial_delay: 5
+      max_delay: 120
+
+  # --- 2a.1: Extract implementer status ---
+  - id: "extract-status"
+    condition: "{{task_already_done}} != 'true'"
+    type: "bash"
+    timeout: 30
+    command: |
+      STATUS=$(cat <<'STATUS_DELIM' | grep -m1 '^STATUS:' | sed 's/^STATUS:[[:space:]]*//' | tr -d '[:space:]'
+      {{task_implementation}}
+      STATUS_DELIM
+      )
+      if [ -z "$STATUS" ]; then
+        echo "DONE"
+      else
+        echo "$STATUS"
+      fi
+    output: "impl_status"
+
+  # --- 2a.2: BLOCKED → immediate human flag ---
+  - id: "blocked-flag"
+    condition: "{{impl_status}} == 'BLOCKED'"
+    agent: "superpowers:plan-writer"
+    timeout: 120
+    provider_preferences:
+      - class: fast
+    prompt: |
+      BLOCKED TASK — HUMAN INTERVENTION NEEDED
+      ==========================================
+      Task {{current_task.task_id}} reported BLOCKED status.
+
+      IMPLEMENTER REPORT:
+      {{task_implementation}}
+
+      Format a clear, concise summary of:
+      1. Which task is blocked (task_id and description)
+      2. What the specific blocker is
+      3. What information or action the human needs to provide
+
+      This is a flag for the human operator — keep it short and actionable.
+    output: "blocked_flag"
+
+  # --- 2a.3: Extract concerns if DONE_WITH_CONCERNS ---
+  - id: "extract-concerns"
+    condition: "{{impl_status}} == 'DONE_WITH_CONCERNS'"
+    type: "bash"
+    timeout: 30
+    command: |
+      cat <<'CONCERN_DELIM' | sed -n '/[Cc]oncern/,/^[A-Z][A-Z]/p' | head -30
+      {{task_implementation}}
+      CONCERN_DELIM
+    output: "observation_notes"
+
+  # --- 2a.4: Classify task complexity for tiered review ---
+  - id: "classify-tier"
+    condition: "{{impl_status}} != 'BLOCKED' and {{impl_status}} != 'SKIP'"
+    type: "bash"
+    timeout: 30
+    command: |
+      FILE_COUNT=$(cat <<'FILES_DELIM' | python3 -c "
+      import json, sys
+      data = sys.stdin.read().strip()
+      try:
+          files = json.loads(data)
+          print(len(files) if isinstance(files, list) else 1)
+      except Exception:
+          print(len([l for l in data.splitlines() if l.strip()]))
+      "
+      {{current_task.files}}
+      FILES_DELIM
+      )
+      SPEC_WORDS=$(cat <<'SPEC_DELIM' | wc -w
+      {{current_task.spec}}
+      SPEC_DELIM
+      )
+      if [ "$FILE_COUNT" -le 1 ] && [ "$SPEC_WORDS" -lt 50 ]; then
+        echo "trivial"
+      elif [ "$FILE_COUNT" -le 5 ]; then
+        echo "standard"
+      else
+        echo "complex"
+      fi
+    output: "review_tier"
+
+  # --- 2b: Spec compliance review loop ---
+  - id: "spec-review-loop"
+    condition: "{{impl_status}} != 'BLOCKED' and {{review_tier}} == 'complex'"
+    while_condition: "true"
+    break_when: "{{spec_approved}} == 'true'"
+    max_while_iterations: 3
+    steps:
+      - id: "spec-review"
+        agent: "superpowers:spec-reviewer"
+        prompt: |
+          SPEC COMPLIANCE REVIEW
+          ======================
+          Review Stage 1 of 2: Verify implementation matches specification EXACTLY.
+
+          TASK SPEC:
+          Task ID: {{current_task.task_id}}
+          Description: {{current_task.description}}
+          Specification: {{current_task.spec}}
+          Acceptance Criteria: {{current_task.acceptance_criteria}}
+          Files: {{current_task.files}}
+
+          IMPLEMENTATION RESULT:
+          {{task_implementation}}
+
+          YOUR MISSION:
+          1. Read the ACTUAL CODE (do not trust the implementation report)
+          2. Compare every spec requirement against what was implemented
+          3. Run the test suite and read the full output
+          4. Check for missing requirements AND extra features
+
+          VERDICT FORMAT:
+          End your review with exactly one of:
+          - "VERDICT: APPROVED" — spec fully implemented, nothing extra
+          - "VERDICT: NEEDS CHANGES — [list specific issues]"
+
+          REVIEW CALIBRATION:
+          If this is a re-review (you can see previous feedback in the implementation result),
+          focus on whether the SPECIFIC ISSUES from the previous review were addressed.
+          Do not introduce new stylistic concerns on re-review — only flag functional
+          spec violations that remain unresolved. Minor style preferences do NOT warrant
+          NEEDS CHANGES on a re-review.
+
+          EXCEPTION: Critical bugs, security vulnerabilities, or data-safety issues
+          introduced by the fix itself must always be flagged regardless of review
+          iteration. This calibration applies to style preferences, not correctness.
+
+          IMPLEMENTER OBSERVATIONS:
+          {{observation_notes}}
+          (If the implementer flagged concerns, evaluate whether they indicate
+          correctness issues. If "(none)", ignore this section.)
+        output: "spec_verdict"
+        timeout: 600
+        retry:
+          max_attempts: 3
+          backoff: exponential
+          initial_delay: 5
+          max_delay: 120
+
+      # Extract a safe boolean from the raw markdown verdict
+      - id: "extract-spec-verdict"
+        type: "bash"
+        timeout: 30
+        command: |
+          if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
+          {{spec_verdict}}
+          VERDICT_DELIM
+          then
+            echo "true"
+          else
+            echo "false"
+          fi
+        output: "spec_approved"
+
+      - id: "spec-fix"
+        condition: "{{spec_approved}} == 'false'"
+        agent: "superpowers:implementer"
+        prompt: |
+          SPEC COMPLIANCE FIX (Iteration {{_loop_iteration}} of 3)
+          =========================================================
+          The spec reviewer found issues with your implementation.
+          This is review-fix iteration {{_loop_iteration}} of a maximum 3.
+          After 3 attempts, remaining issues will be flagged for human review.
+
+          REVIEW FEEDBACK:
+          {{spec_verdict}}
+
+          ORIGINAL TASK:
+          Task ID: {{current_task.task_id}}
+          Specification: {{current_task.spec}}
+          Files: {{current_task.files}}
+
+          Focus on the MOST CRITICAL issues first. Fix ONLY the issues identified.
+          Do not add anything else. Do not refactor or improve beyond what was flagged.
+          Run tests after fixing. Commit your changes.
+
+          Return updated implementation results.
+        output: "task_implementation"
+        timeout: 3600
+        retry:
+          max_attempts: 3
+          backoff: exponential
+          initial_delay: 5
+          max_delay: 120
+
+  # --- 2b.1: Check if spec review exhausted without approval ---
+  - id: "check-spec-resolution"
+    condition: "{{spec_approved}} == 'false'"
+    agent: "superpowers:plan-writer"
+    timeout: 120
+    provider_preferences:
+      - class: fast
+    prompt: |
+      WARNING: Spec review loop exhausted after 3 iterations without approval.
+      Task: {{current_task.task_id}} — {{current_task.description}}
+      Last spec verdict: {{spec_verdict}}
+
+      Flag this task as having unresolved spec issues. Include this warning
+      in the task summary so the human reviewer is aware during the approval gate.
+    output: "spec_unresolved"
+
+  # --- 2b.2: Combined spec+quality review for standard tier ---
+  - id: "combined-review"
+    condition: "{{review_tier}} == 'standard'"
+    agent: "superpowers:code-reviewer"
+    timeout: 600
+    retry:
+      max_attempts: 3
+      backoff: exponential
+      initial_delay: 5
+      max_delay: 120
+    prompt: |
+      COMBINED SPEC + QUALITY REVIEW (Standard Tier)
+      ================================================
+      This task has moderate complexity. Perform a single combined review
+      covering both spec compliance AND code quality.
+
+      TASK SPEC:
+      Task ID: {{current_task.task_id}}
+      Description: {{current_task.description}}
+      Specification: {{current_task.spec}}
+      Acceptance Criteria: {{current_task.acceptance_criteria}}
+      Files: {{current_task.files}}
+
+      IMPLEMENTATION RESULT:
+      {{task_implementation}}
+
+      IMPLEMENTER OBSERVATIONS:
+      {{observation_notes}}
+
+      YOUR MISSION:
+      1. Read the ACTUAL CODE (do not trust the implementation report)
+      2. Run the test suite and read the full output
+      3. Check spec compliance: all requirements implemented, nothing extra
+      4. Check code quality: clean code, error handling, test quality
+
+      VERDICT FORMAT:
+      End your review with exactly one of:
+      - "VERDICT: APPROVED" — spec compliant and quality acceptable
+      - "VERDICT: NEEDS CHANGES — [list specific issues]"
+
+      Only critical and major issues require NEEDS CHANGES.
+      Minor style preferences do NOT block approval.
+    output: "combined_verdict"
+
+  # --- 2c: Code quality review loop ---
+  - id: "quality-review-loop"
+    condition: "{{impl_status}} != 'BLOCKED' and {{review_tier}} == 'complex'"
+    while_condition: "true"
+    break_when: "{{quality_approved}} == 'true'"
+    max_while_iterations: 3
+    steps:
+      - id: "quality-review"
+        agent: "superpowers:code-quality-reviewer"
+        prompt: |
+          CODE QUALITY REVIEW
+          ===================
+          Review Stage 2 of 2: Verify code quality and best practices.
+          Spec compliance has already been verified.
+
+          TASK:
+          Task ID: {{current_task.task_id}}
+          Description: {{current_task.description}}
+          Files: {{current_task.files}}
+
+          IMPLEMENTATION:
+          {{task_implementation}}
+
+          YOUR MISSION:
+          1. Read the ACTUAL CODE
+          2. Run the test suite and read the full output
+          3. Check: clean code, DRY, error handling, test quality, maintainability
+          4. Do NOT change spec behavior — only refactor for quality
+
+          VERDICT FORMAT:
+          End your review with exactly one of:
+          - "VERDICT: APPROVED" — code quality meets standards
+          - "VERDICT: NEEDS CHANGES — [list specific issues by severity]"
+
+          Minor/suggestion issues do NOT block approval.
+          Only critical and major issues require NEEDS CHANGES.
+        output: "quality_verdict"
+        timeout: 600
+        retry:
+          max_attempts: 3
+          backoff: exponential
+          initial_delay: 5
+          max_delay: 120
+
+      # Extract a safe boolean from the raw markdown verdict
+      - id: "extract-quality-verdict"
+        type: "bash"
+        timeout: 30
+        command: |
+          if cat <<'VERDICT_DELIM' | grep -q "VERDICT: APPROVED"
+          {{quality_verdict}}
+          VERDICT_DELIM
+          then
+            echo "true"
+          else
+            echo "false"
+          fi
+        output: "quality_approved"
+
+      - id: "quality-fix"
+        condition: "{{quality_approved}} == 'false'"
+        agent: "superpowers:implementer"
+        prompt: |
+          CODE QUALITY FIX (Iteration {{_loop_iteration}} of 3)
+          ======================================================
+          The code quality reviewer found issues.
+          This is review-fix iteration {{_loop_iteration}} of a maximum 3.
+          After 3 attempts, remaining issues will be flagged for human review.
+
+          REVIEW FEEDBACK:
+          {{quality_verdict}}
+
+          ORIGINAL TASK:
+          Task ID: {{current_task.task_id}}
+          Specification: {{current_task.spec}}
+          Files: {{current_task.files}}
+
+          Focus on CRITICAL and IMPORTANT issues only. Minor suggestions do not
+          block approval. Fix ONLY the quality issues identified. Do NOT change
+          spec behavior. Run tests after fixing. Commit your changes.
+
+          Return updated implementation results.
+        output: "task_implementation"
+        timeout: 3600
+        retry:
+          max_attempts: 3
+          backoff: exponential
+          initial_delay: 5
+          max_delay: 120
+
+  # --- 2c.1: Check if quality review exhausted without approval ---
+  - id: "check-quality-resolution"
+    condition: "{{quality_approved}} == 'false'"
+    agent: "superpowers:plan-writer"
+    timeout: 120
+    provider_preferences:
+      - class: fast
+    prompt: |
+      WARNING: Quality review loop exhausted after 3 iterations without approval.
+      Task: {{current_task.task_id}} — {{current_task.description}}
+      Last quality verdict: {{quality_verdict}}
+
+      Flag this task as having unresolved quality issues. Include this warning
+      in the task summary so the human reviewer is aware during the approval gate.
+    output: "quality_unresolved"
+
+  # --- 2d: Write checkpoint after successful task completion ---
+  - id: "write-checkpoint"
+    condition: "{{impl_status}} == 'DONE' or {{impl_status}} == 'DONE_WITH_CONCERNS'"
+    type: "bash"
+    timeout: 30
+    command: |
+      TASK_ID=$(cat <<'TASKID_DELIM' | tr -d '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+      {{current_task.task_id}}
+      TASKID_DELIM
+      )
+      if [ ! -f ".superpowers-checkpoint.json" ]; then
+        echo '{"completed_tasks": []}' > .superpowers-checkpoint.json
+      fi
+      python3 -c "
+      import json
+      with open('.superpowers-checkpoint.json', 'r') as f:
+          data = json.load(f)
+      task_id = '$TASK_ID'
+      if task_id not in data.get('completed_tasks', []):
+          data.setdefault('completed_tasks', []).append(task_id)
+      with open('.superpowers-checkpoint.json', 'w') as f:
+          json.dump(data, f, indent=2)
+      print(f'Checkpoint saved: {task_id}')
+      "
+
+  # --- 2e: Generate/update project briefing (self-caching) ---
+  - id: "update-project-briefing"
+    condition: "{{impl_status}} == 'DONE' or {{impl_status}} == 'DONE_WITH_CONCERNS'"
+    type: "bash"
+    timeout: 30
+    command: |
+      if [ ! -f ".superpowers-project-brief.txt" ]; then
+        BRIEF="PROJECT BRIEF (auto-generated after first task)\n"
+        BRIEF="${BRIEF}================================================\n"
+        # Test framework detection
+        if grep -rq "import pytest" --include="*.py" 2>/dev/null; then
+          BRIEF="${BRIEF}Test framework: pytest\n"
+          BRIEF="${BRIEF}Test command: pytest\n"
+        elif grep -rq "import unittest" --include="*.py" 2>/dev/null; then
+          BRIEF="${BRIEF}Test framework: unittest\n"
+          BRIEF="${BRIEF}Test command: python -m unittest discover\n"
+        elif [ -f "package.json" ]; then
+          BRIEF="${BRIEF}Test command: npm test\n"
+        elif [ -f "Cargo.toml" ]; then
+          BRIEF="${BRIEF}Test command: cargo test\n"
+        fi
+        # Build/lint detection
+        if [ -f "pyproject.toml" ]; then
+          BRIEF="${BRIEF}Build config: pyproject.toml\n"
+        elif [ -f "Makefile" ]; then
+          BRIEF="${BRIEF}Build tool: make\n"
+        fi
+        # File patterns from recent changes
+        RECENT=$(git diff --name-only HEAD~1 2>/dev/null | head -10)
+        if [ -n "$RECENT" ]; then
+          BRIEF="${BRIEF}Recent files changed:\n${RECENT}\n"
+        fi
+        echo -e "$BRIEF" > .superpowers-project-brief.txt
+      fi
+      cat .superpowers-project-brief.txt
+    output: "project_brief"
