@@ -89,6 +89,37 @@ stages:
         as: "current_task"
         on_error: "continue"
         steps:
+          # --- 2.0: Initialize pipeline variables (prevents undefined var errors) ---
+          - id: "init-impl-status"
+            type: "bash"
+            timeout: 10
+            command: "echo SKIP"
+            output: "impl_status"
+
+          - id: "init-review-tier"
+            type: "bash"
+            timeout: 10
+            command: "echo trivial"
+            output: "review_tier"
+
+          - id: "init-spec-flag"
+            type: "bash"
+            timeout: 10
+            command: "echo true"
+            output: "spec_approved"
+
+          - id: "init-quality-flag"
+            type: "bash"
+            timeout: 10
+            command: "echo true"
+            output: "quality_approved"
+
+          - id: "init-observation-notes"
+            type: "bash"
+            timeout: 10
+            command: "echo '(none)'"
+            output: "observation_notes"
+
           # --- 2a: Implement the task ---
           - id: "implement"
             agent: "superpowers:implementer"
@@ -131,6 +162,22 @@ stages:
               backoff: exponential
               initial_delay: 5
               max_delay: 120
+
+          # --- 2a.1: Extract implementer status ---
+          - id: "extract-status"
+            type: "bash"
+            timeout: 30
+            command: |
+              STATUS=$(cat <<'STATUS_DELIM' | grep -m1 '^STATUS:' | sed 's/^STATUS:[[:space:]]*//' | tr -d '[:space:]'
+              {{task_implementation}}
+              STATUS_DELIM
+              )
+              if [ -z "$STATUS" ]; then
+                echo "DONE"
+              else
+                echo "$STATUS"
+              fi
+            output: "impl_status"
 
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
