@@ -137,6 +137,40 @@ delegate(agent="superpowers:implementer", model_role="coding", instruction="..."
 
 Default to `coding` when uncertain.
 
+## v4.0 Pipeline Enhancements
+
+The SDD recipe (v4.0.0) includes several wall-time optimizations:
+
+### Tiered Review
+Tasks are classified by complexity:
+- **Trivial** (≤1 file, <50 words in spec): TDD at implementer level only, no agent-based review
+- **Standard** (2-5 files): single combined spec+quality review via `code-reviewer` agent
+- **Complex** (>5 files): full two-stage review with iteration (spec → quality)
+
+### Checkpoint/Resume
+Completed tasks are tracked in `.superpowers-checkpoint.json`. On recipe restart, completed tasks are skipped in seconds. The checkpoint file is created automatically.
+
+### Status Protocol
+The implementer prompt now requires a STATUS: line as the first output line:
+- `STATUS: DONE` — proceed to review
+- `STATUS: DONE_WITH_CONCERNS` — proceed to review with concerns passed to spec-reviewer
+- `STATUS: BLOCKED` — flag for human, skip reviews
+- `STATUS: NEEDS_CONTEXT` — treated as DONE (implementer should ask before proceeding)
+
+### Model Routing
+Utility steps (load-plan, task-summary, warning formatters, approval prep) use `class: fast` models. Implementers use `coding` (Sonnet), reviewers use `critique` (Sonnet @ extra_high).
+
+### Bounded Parallelism (Opt-In)
+Default is sequential (matching obra/superpowers guidance). To enable:
+1. Edit `recipes/subagent-driven-development.yaml`
+2. Change `parallel: false` to `parallel: 2` or `parallel: 3` on the `per-task-pipeline` step
+3. The `rate_limiting` config caps concurrent LLM calls at 5 with adaptive backoff
+
+**Warning:** Parallel execution means multiple implementers write to the same codebase simultaneously. Only enable for plans with truly independent tasks.
+
+### Project Briefing
+After the first task completes, the pipeline auto-detects test framework, build tools, and file patterns. This brief is injected into subsequent implementer prompts as read-only context.
+
 ## SDD Worked Example
 
 Load the walkthrough skill to see a realistic conversational flow of the full three-agent pipeline in action:
