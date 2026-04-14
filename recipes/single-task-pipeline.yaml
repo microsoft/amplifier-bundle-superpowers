@@ -137,8 +137,7 @@ steps:
     condition: "{{impl_status}} == 'BLOCKED'"
     agent: "superpowers:plan-writer"
     timeout: 120
-    provider_preferences:
-      - class: fast
+    model_role: "fast"
     prompt: |
       BLOCKED TASK — HUMAN INTERVENTION NEEDED
       ==========================================
@@ -306,8 +305,7 @@ steps:
     condition: "{{spec_approved}} == 'false'"
     agent: "superpowers:plan-writer"
     timeout: 120
-    provider_preferences:
-      - class: fast
+    model_role: "fast"
     prompt: |
       WARNING: Spec review loop exhausted after 3 iterations without approval.
       Task: {{current_task.task_id}} — {{current_task.description}}
@@ -456,8 +454,7 @@ steps:
     condition: "{{quality_approved}} == 'false'"
     agent: "superpowers:plan-writer"
     timeout: 120
-    provider_preferences:
-      - class: fast
+    model_role: "fast"
     prompt: |
       WARNING: Quality review loop exhausted after 3 iterations without approval.
       Task: {{current_task.task_id}} — {{current_task.description}}

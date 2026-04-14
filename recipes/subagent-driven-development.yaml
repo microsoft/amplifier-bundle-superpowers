@@ -55,8 +55,7 @@ stages:
       # -----------------------------------------------------------------------
       - id: "load-plan"
         agent: "superpowers:plan-writer"
-        provider_preferences:
-          - class: fast
+        model_role: "fast"
         prompt: |
           Load the implementation plan from: {{plan_path}}
 
@@ -123,8 +122,7 @@ stages:
       - id: "task-summary"
         agent: "superpowers:plan-writer"
         timeout: 120
-        provider_preferences:
-          - class: fast
+        model_role: "fast"
         prompt: |
           TASK EXECUTION SUMMARY
           ======================
@@ -235,8 +233,7 @@ stages:
       - id: "prepare-approval"
         agent: "superpowers:implementer"
         timeout: 600
-        provider_preferences:
-          - class: fast
+        model_role: "fast"
         prompt: |
           Prepare for human approval checkpoint.
 
@@ -326,8 +323,7 @@ stages:
         agent: "foundation:zen-architect"
         mode: "ARCHITECT"
         timeout: 600
-        provider_preferences:
-          - class: fast
+        model_role: "fast"
         prompt: |
           IMPLEMENTATION COMPLETE - MERGE OPTIONS
           =======================================
