@@ -175,14 +175,19 @@ stages:
                  - Confirm they pass
                  - Commit your changes
 
-              OUTPUT FORMAT:
-              Return your implementation results including:
-              - task_id: Which task was implemented
+              OUTPUT FORMAT (first line MUST be the status):
+              STATUS: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+              - task_id: {{current_task.task_id}}
               - files_changed: [list of files created/modified]
               - tests_written: [list of test files/functions]
-              - test_results: pass/fail with details
-              - implementation_notes: Key decisions or notes
-              - spec_coverage: How each spec requirement was addressed
+              - test_results: PASS (N/N) or FAIL (details)
+              - concerns: (if DONE_WITH_CONCERNS, list specific concerns here)
+              - blocker: (if BLOCKED, describe what prevents completion)
+
+              Use STATUS: DONE when task is complete and all tests pass.
+              Use STATUS: DONE_WITH_CONCERNS when complete but you noticed issues worth flagging.
+              Use STATUS: BLOCKED when you cannot proceed (missing dependency, failing prereq).
+              Use STATUS: NEEDS_CONTEXT when you need information not provided.
             output: "task_implementation"
             timeout: 3600
             retry:
