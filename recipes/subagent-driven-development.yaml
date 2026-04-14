@@ -37,6 +37,12 @@ context:
   plan_path: ""  # Required: Path to the implementation plan file
   task_parallelism: false  # Set to 2 or 3 to enable bounded parallel task execution
 
+rate_limiting:
+  max_concurrent_llm: 5
+  backoff:
+    enabled: true
+    initial_delay_ms: 2000
+
 stages:
   # ============================================================================
   # STAGE 1: Task Execution
@@ -103,6 +109,7 @@ stages:
         foreach: "{{plan_data.tasks}}"
         as: "current_task"
         on_error: "continue"
+        parallel: false
         type: "recipe"
         recipe: "single-task-pipeline.yaml"
         context:
