@@ -155,7 +155,11 @@ stages:
               Focus ONLY on this task. Do not consider other tasks.
 
               TASK TO IMPLEMENT:
-              {{current_task}}
+              Task ID: {{current_task.task_id}}
+              Description: {{current_task.description}}
+              Specification: {{current_task.spec}}
+              Acceptance Criteria: {{current_task.acceptance_criteria}}
+              Files: {{current_task.files}}
 
               IMPLEMENTATION REQUIREMENTS:
               1. FOLLOW TDD (Test-Driven Development):
@@ -284,7 +288,11 @@ stages:
                   Review Stage 1 of 2: Verify implementation matches specification EXACTLY.
 
                   TASK SPEC:
-                  {{current_task}}
+                  Task ID: {{current_task.task_id}}
+                  Description: {{current_task.description}}
+                  Specification: {{current_task.spec}}
+                  Acceptance Criteria: {{current_task.acceptance_criteria}}
+                  Files: {{current_task.files}}
 
                   IMPLEMENTATION RESULT:
                   {{task_implementation}}
@@ -352,7 +360,9 @@ stages:
                   {{spec_verdict}}
 
                   ORIGINAL TASK:
-                  {{current_task}}
+                  Task ID: {{current_task.task_id}}
+                  Specification: {{current_task.spec}}
+                  Files: {{current_task.files}}
 
                   Focus on the MOST CRITICAL issues first. Fix ONLY the issues identified.
                   Do not add anything else. Do not refactor or improve beyond what was flagged.
@@ -376,7 +386,7 @@ stages:
               - class: fast
             prompt: |
               WARNING: Spec review loop exhausted after 3 iterations without approval.
-              Task: {{current_task}}
+              Task: {{current_task.task_id}} — {{current_task.description}}
               Last spec verdict: {{spec_verdict}}
 
               Flag this task as having unresolved spec issues. Include this warning
@@ -443,7 +453,9 @@ stages:
                   Spec compliance has already been verified.
 
                   TASK:
-                  {{current_task}}
+                  Task ID: {{current_task.task_id}}
+                  Description: {{current_task.description}}
+                  Files: {{current_task.files}}
 
                   IMPLEMENTATION:
                   {{task_implementation}}
@@ -498,7 +510,9 @@ stages:
                   {{quality_verdict}}
 
                   ORIGINAL TASK:
-                  {{current_task}}
+                  Task ID: {{current_task.task_id}}
+                  Specification: {{current_task.spec}}
+                  Files: {{current_task.files}}
 
                   Focus on CRITICAL and IMPORTANT issues only. Minor suggestions do not
                   block approval. Fix ONLY the quality issues identified. Do NOT change
@@ -522,7 +536,7 @@ stages:
               - class: fast
             prompt: |
               WARNING: Quality review loop exhausted after 3 iterations without approval.
-              Task: {{current_task}}
+              Task: {{current_task.task_id}} — {{current_task.description}}
               Last quality verdict: {{quality_verdict}}
 
               Flag this task as having unresolved quality issues. Include this warning
