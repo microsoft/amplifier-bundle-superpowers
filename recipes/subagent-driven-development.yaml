@@ -269,7 +269,7 @@ stages:
 
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
-            condition: "{{impl_status}} != 'BLOCKED'"
+            condition: "{{impl_status}} != 'BLOCKED' and {{review_tier}} == 'complex'"
             while_condition: "true"
             break_when: "{{spec_approved}} == 'true'"
             max_while_iterations: 3
@@ -379,9 +379,53 @@ stages:
               in the task summary so the human reviewer is aware during the approval gate.
             output: "spec_unresolved"
 
+          # --- 2b.2: Combined spec+quality review for standard tier ---
+          - id: "combined-review"
+            condition: "{{review_tier}} == 'standard'"
+            agent: "superpowers:code-reviewer"
+            timeout: 600
+            retry:
+              max_attempts: 3
+              backoff: exponential
+              initial_delay: 5
+              max_delay: 120
+            prompt: |
+              COMBINED SPEC + QUALITY REVIEW (Standard Tier)
+              ================================================
+              This task has moderate complexity. Perform a single combined review
+              covering both spec compliance AND code quality.
+
+              TASK SPEC:
+              Task ID: {{current_task.task_id}}
+              Description: {{current_task.description}}
+              Specification: {{current_task.spec}}
+              Acceptance Criteria: {{current_task.acceptance_criteria}}
+              Files: {{current_task.files}}
+
+              IMPLEMENTATION RESULT:
+              {{task_implementation}}
+
+              IMPLEMENTER OBSERVATIONS:
+              {{observation_notes}}
+
+              YOUR MISSION:
+              1. Read the ACTUAL CODE (do not trust the implementation report)
+              2. Run the test suite and read the full output
+              3. Check spec compliance: all requirements implemented, nothing extra
+              4. Check code quality: clean code, error handling, test quality
+
+              VERDICT FORMAT:
+              End your review with exactly one of:
+              - "VERDICT: APPROVED" — spec compliant and quality acceptable
+              - "VERDICT: NEEDS CHANGES — [list specific issues]"
+
+              Only critical and major issues require NEEDS CHANGES.
+              Minor style preferences do NOT block approval.
+            output: "combined_verdict"
+
           # --- 2c: Code quality review loop ---
           - id: "quality-review-loop"
-            condition: "{{impl_status}} != 'BLOCKED'"
+            condition: "{{impl_status}} != 'BLOCKED' and {{review_tier}} == 'complex'"
             while_condition: "true"
             break_when: "{{quality_approved}} == 'true'"
             max_while_iterations: 3
