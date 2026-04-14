@@ -225,6 +225,17 @@ stages:
               This is a flag for the human operator — keep it short and actionable.
             output: "blocked_flag"
 
+          # --- 2a.3: Extract concerns if DONE_WITH_CONCERNS ---
+          - id: "extract-concerns"
+            condition: "{{impl_status}} == 'DONE_WITH_CONCERNS'"
+            type: "bash"
+            timeout: 30
+            command: |
+              cat <<'CONCERN_DELIM' | sed -n '/[Cc]oncern/,/^[A-Z][A-Z]/p' | head -30
+              {{task_implementation}}
+              CONCERN_DELIM
+            output: "observation_notes"
+
           # --- 2b: Spec compliance review loop ---
           - id: "spec-review-loop"
             condition: "{{impl_status}} != 'BLOCKED'"
@@ -266,6 +277,11 @@ stages:
                   EXCEPTION: Critical bugs, security vulnerabilities, or data-safety issues
                   introduced by the fix itself must always be flagged regardless of review
                   iteration. This calibration applies to style preferences, not correctness.
+
+                  IMPLEMENTER OBSERVATIONS:
+                  {{observation_notes}}
+                  (If the implementer flagged concerns, evaluate whether they indicate
+                  correctness issues. If "(none)", ignore this section.)
                 output: "spec_verdict"
                 timeout: 600
                 retry:
