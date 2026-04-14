@@ -143,6 +143,17 @@ stages:
             command: "echo '(none)'"
             output: "observation_notes"
 
+          - id: "load-project-brief"
+            type: "bash"
+            timeout: 10
+            command: |
+              if [ -f ".superpowers-project-brief.txt" ]; then
+                cat .superpowers-project-brief.txt
+              else
+                echo ""
+              fi
+            output: "project_brief"
+
           # --- 2a: Implement the task ---
           - id: "implement"
             condition: "{{task_already_done}} != 'true'"
@@ -160,6 +171,9 @@ stages:
               Specification: {{current_task.spec}}
               Acceptance Criteria: {{current_task.acceptance_criteria}}
               Files: {{current_task.files}}
+
+              PROJECT BRIEF (read-only reference from prior tasks):
+              {{project_brief}}
 
               IMPLEMENTATION REQUIREMENTS:
               1. FOLLOW TDD (Test-Driven Development):
@@ -572,6 +586,43 @@ stages:
                   json.dump(data, f, indent=2)
               print(f'Checkpoint saved: {task_id}')
               "
+
+          # --- 2e: Generate/update project briefing (self-caching) ---
+          - id: "update-project-briefing"
+            condition: "{{impl_status}} == 'DONE' or {{impl_status}} == 'DONE_WITH_CONCERNS'"
+            type: "bash"
+            timeout: 30
+            command: |
+              if [ ! -f ".superpowers-project-brief.txt" ]; then
+                BRIEF="PROJECT BRIEF (auto-generated after first task)\n"
+                BRIEF="${BRIEF}================================================\n"
+                # Test framework detection
+                if grep -rq "import pytest" --include="*.py" 2>/dev/null; then
+                  BRIEF="${BRIEF}Test framework: pytest\n"
+                  BRIEF="${BRIEF}Test command: pytest\n"
+                elif grep -rq "import unittest" --include="*.py" 2>/dev/null; then
+                  BRIEF="${BRIEF}Test framework: unittest\n"
+                  BRIEF="${BRIEF}Test command: python -m unittest discover\n"
+                elif [ -f "package.json" ]; then
+                  BRIEF="${BRIEF}Test command: npm test\n"
+                elif [ -f "Cargo.toml" ]; then
+                  BRIEF="${BRIEF}Test command: cargo test\n"
+                fi
+                # Build/lint detection
+                if [ -f "pyproject.toml" ]; then
+                  BRIEF="${BRIEF}Build config: pyproject.toml\n"
+                elif [ -f "Makefile" ]; then
+                  BRIEF="${BRIEF}Build tool: make\n"
+                fi
+                # File patterns from recent changes
+                RECENT=$(git diff --name-only HEAD~1 2>/dev/null | head -10)
+                if [ -n "$RECENT" ]; then
+                  BRIEF="${BRIEF}Recent files changed:\n${RECENT}\n"
+                fi
+                echo -e "$BRIEF" > .superpowers-project-brief.txt
+              fi
+              cat .superpowers-project-brief.txt
+            output: "project_brief"
 
         collect: "completed_tasks"
 
