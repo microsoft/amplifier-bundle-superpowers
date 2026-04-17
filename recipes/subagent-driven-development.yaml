@@ -55,7 +55,6 @@ stages:
       # -----------------------------------------------------------------------
       - id: "load-plan"
         agent: "superpowers:plan-writer"
-        model_role: "fast"
         prompt: |
           Load the implementation plan from: {{plan_path}}
 
