@@ -29,7 +29,7 @@
 
 name: "subagent-driven-development"
 description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
-version: "4.0.0"
+version: "4.0.1"
 author: "Superpowers Bundle"
 tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline", "checkpoint", "tiered-review"]
 
@@ -86,6 +86,63 @@ stages:
         output: "plan_data"
         parse_json: true
         timeout: 600
+
+      # -----------------------------------------------------------------------
+      # Step 1.1: Validate Plan Structure
+      # Fail early with a clear error if plan_data.tasks is malformed.
+      # Prevents opaque "Cannot access 'task_id' on str" errors in the foreach.
+      # -----------------------------------------------------------------------
+      - id: "validate-plan"
+        type: "bash"
+        timeout: 30
+        command: |
+          $AMPLIFIER_PYTHON - << 'PYEOF'
+          import json, sys, os
+
+          raw = os.environ.get("PLAN_DATA", "null")
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError as e:
+              print(f"ERROR: plan_data is not valid JSON: {e}", file=sys.stderr)
+              print(f"Raw plan_data (first 500 chars): {raw[:500]}", file=sys.stderr)
+              sys.exit(1)
+
+          if not isinstance(data, dict) or "tasks" not in data:
+              print("ERROR: plan_data must be a dict with a 'tasks' key", file=sys.stderr)
+              print(f"  type: {type(data).__name__}", file=sys.stderr)
+              if isinstance(data, dict):
+                  print(f"  keys: {list(data.keys())}", file=sys.stderr)
+              print(f"  value (first 500 chars): {json.dumps(data)[:500]}", file=sys.stderr)
+              sys.exit(1)
+
+          tasks = data["tasks"]
+          if not isinstance(tasks, list):
+              print(f"ERROR: plan_data.tasks must be a list, got {type(tasks).__name__}", file=sys.stderr)
+              sys.exit(1)
+
+          if len(tasks) == 0:
+              print("ERROR: plan_data.tasks is empty - no tasks found in plan", file=sys.stderr)
+              sys.exit(1)
+
+          REQUIRED = {"task_id", "description", "spec", "acceptance_criteria", "files"}
+          for i, task in enumerate(tasks):
+              if not isinstance(task, dict):
+                  print(f"ERROR: plan_data.tasks[{i}] is {type(task).__name__}, not a dict", file=sys.stderr)
+                  print(f"  value: {repr(task)}", file=sys.stderr)
+                  print(f"  full tasks: {json.dumps(tasks)}", file=sys.stderr)
+                  sys.exit(1)
+              missing = REQUIRED - set(task.keys())
+              if missing:
+                  tid = task.get("task_id", "UNKNOWN")
+                  print(f"ERROR: plan_data.tasks[{i}] (task_id={tid!r}) missing keys: {sorted(missing)}", file=sys.stderr)
+                  print(f"  keys found: {sorted(task.keys())}", file=sys.stderr)
+                  print(f"  task: {json.dumps(task)}", file=sys.stderr)
+                  sys.exit(1)
+
+          print(f"plan_data validated: {len(tasks)} task(s) ready for execution")
+          PYEOF
+        env:
+          PLAN_DATA: "{{plan_data}}"
 
       # -----------------------------------------------------------------------
       # Step 1.5: Initialize project brief from cache (if exists)
