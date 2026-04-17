@@ -382,3 +382,140 @@ class TestValidatePlanBashLogicValidInput:
             f"Task with extra fields should pass validation (extra fields are OK). "
             f"Exit: {result.returncode}, stderr: {result.stderr.decode()!r}"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Regression tests: the recipe command itself must actually invoke Python.
+# These run the ACTUAL bash command extracted from the YAML file (not the
+# Python script in isolation), which is the only way to catch the
+# $AMPLIFIER_PYTHON silent-no-op bug and verify the python3 fix holds.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestValidatePlanRecipeCommandInvokesRealPython:
+    """The ACTUAL bash command in the recipe must invoke Python, not silently pass.
+
+    Root cause being tested: commit 68a40b6 used $AMPLIFIER_PYTHON to start the
+    interpreter.  In a typical DTU/CI environment AMPLIFIER_PYTHON is unset, so
+    the shell expanded the command to:
+
+        - << 'PYEOF'
+        ... python code ...
+        PYEOF
+
+    That is a bash no-op (`-` as a command reads stdin and discards it).  Exit
+    code: 0.  Stdout: empty.  The heredoc was swallowed, Python never ran,
+    and malformed plan_data sailed straight through into the foreach, which
+    then exploded with the opaque "Cannot access 'task_id' on str" error.
+
+    The fix is to use `python3` literally.  These tests run the command string
+    from the YAML file directly under bash to confirm the fix holds end-to-end.
+    """
+
+    @staticmethod
+    def _get_recipe_command() -> str:
+        """Extract the bash command string from the validate-plan step."""
+        steps = get_task_execution_steps()
+        step = get_step_by_id(steps, "validate-plan")
+        assert step is not None, "validate-plan step not found in recipe"
+        command = step.get("command")
+        assert command is not None, "validate-plan step has no 'command' field"
+        return command
+
+    @staticmethod
+    def _run_recipe_command(plan_data: dict) -> "subprocess.CompletedProcess[bytes]":
+        """Run the recipe command via bash with PLAN_DATA set and AMPLIFIER_PYTHON absent.
+
+        Mirrors the DTU/CI environment where AMPLIFIER_PYTHON is not in PATH.
+        """
+        command = TestValidatePlanRecipeCommandInvokesRealPython._get_recipe_command()
+        env = os.environ.copy()
+        env["PLAN_DATA"] = json.dumps(plan_data)
+        # Simulate an environment where AMPLIFIER_PYTHON is not set (DTU, CI, most dev boxes).
+        env.pop("AMPLIFIER_PYTHON", None)
+        return subprocess.run(
+            ["bash", "-c", command],
+            env=env,
+            capture_output=True,
+            timeout=15,
+        )
+
+    def test_recipe_command_starts_with_python3(self):
+        """The first non-whitespace interpreter token in the command must be 'python3'.
+
+        Guards against re-introducing a variable reference like $AMPLIFIER_PYTHON
+        that would silently expand to nothing in environments where the var is unset.
+        """
+        command = self._get_recipe_command()
+        first_line = command.strip().splitlines()[0].strip()
+        assert first_line.startswith("python3 "), (
+            f"validate-plan command must start with 'python3 ', got: {first_line!r}.  "
+            "Using a variable like $AMPLIFIER_PYTHON silently becomes a no-op when the "
+            "variable is unset, bypassing all validation."
+        )
+
+    def test_recipe_command_exits_zero_for_valid_input(self):
+        """Running the full recipe bash command with valid input must exit 0.
+
+        If Python is not invoked (the $AMPLIFIER_PYTHON no-op bug), bash exits 0
+        but produces no stdout.  We check BOTH the exit code AND the output.
+        """
+        result = self._run_recipe_command({"tasks": [VALID_TASK], "total_tasks": 1})
+        assert result.returncode == 0, (
+            f"Recipe command failed for valid input.  "
+            f"exit={result.returncode}, "
+            f"stdout={result.stdout.decode()!r}, "
+            f"stderr={result.stderr.decode()!r}.  "
+            "Check that 'python3' is the interpreter — not a variable that may be unset."
+        )
+
+    def test_recipe_command_produces_python_output_for_valid_input(self):
+        """The recipe command must write a success message to stdout.
+
+        A silent exit 0 with no stdout is the fingerprint of the $AMPLIFIER_PYTHON
+        no-op bug — the heredoc was swallowed without any Python running.
+        """
+        result = self._run_recipe_command({"tasks": [VALID_TASK], "total_tasks": 1})
+        stdout = result.stdout.decode().strip()
+        assert stdout, (
+            f"Recipe command produced no stdout for valid input.  "
+            f"exit={result.returncode}, stderr={result.stderr.decode()!r}.  "
+            "Empty stdout means Python never ran — the command is a no-op.  "
+            "The first line of the command must be 'python3 -', not '$AMPLIFIER_PYTHON -'."
+        )
+        assert "validated" in stdout.lower() or "ready" in stdout.lower(), (
+            f"stdout doesn't look like Python validation output: {stdout!r}"
+        )
+
+    def test_recipe_command_exits_nonzero_for_tasks_as_strings(self):
+        """The recipe command must exit non-zero when tasks are strings, not dicts.
+
+        This is the exact real-world failure case from the DTU run.  If the command
+        is a no-op, it exits 0 even for malformed input — masking the problem.
+        Python must catch the type mismatch and exit 1.
+        """
+        malformed = {
+            "tasks": ["task 1: implement foo", "task 2: implement bar"],
+            "total_tasks": 2,
+        }
+        result = self._run_recipe_command(malformed)
+        assert result.returncode != 0, (
+            f"Recipe command must exit non-zero for tasks-as-strings input.  "
+            f"Got exit code 0.  "
+            f"stdout={result.stdout.decode()!r}, stderr={result.stderr.decode()!r}.  "
+            "Exit 0 with malformed input means Python is NOT running — this is the "
+            "$AMPLIFIER_PYTHON silent no-op bug.  Fix: use 'python3' literally."
+        )
+        stderr = result.stderr.decode()
+        assert "str" in stderr.lower() or "dict" in stderr.lower() or "ERROR" in stderr, (
+            f"stderr must mention the type mismatch.  Got: {stderr!r}"
+        )
+
+    def test_recipe_command_exits_nonzero_for_missing_required_keys(self):
+        """The recipe command must exit non-zero when a task is missing required keys."""
+        incomplete_task = {"task_id": "t1", "description": "only two keys"}
+        result = self._run_recipe_command({"tasks": [incomplete_task], "total_tasks": 1})
+        assert result.returncode != 0, (
+            f"Recipe command must exit non-zero for task missing required keys.  "
+            f"exit={result.returncode}, stderr={result.stderr.decode()!r}"
+        )

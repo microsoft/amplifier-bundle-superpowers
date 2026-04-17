@@ -29,7 +29,7 @@
 
 name: "subagent-driven-development"
 description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
-version: "4.0.1"
+version: "4.0.2"
 author: "Superpowers Bundle"
 tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline", "checkpoint", "tiered-review"]
 
@@ -96,7 +96,7 @@ stages:
         type: "bash"
         timeout: 30
         command: |
-          $AMPLIFIER_PYTHON - << 'PYEOF'
+          python3 - << 'PYEOF'
           import json, sys, os
 
           raw = os.environ.get("PLAN_DATA", "null")
