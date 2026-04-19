@@ -1,31 +1,21 @@
 """Tests for the load-plan step prompt in subagent-driven-development.yaml.
 
-Bug C (fixed in v4.0.3): LLMs wrap structured output in preamble + code fences.
-
-Observed failure pattern from DTU run with v4.0.2 (Opus model):
-
-    I've read the plan. It contains 2 simple tasks, both independent.
-    Here's the extracted structured result:
-
-    ```json
-    {
-      "tasks": [
-        {
-          "task_id": "task-1-hello",
-          ...
-
-parse_json: true cannot handle this — it fails on the preamble, producing
-corrupted plan_data where tasks ends up as a list of strings instead of
-dicts. The foreach then crashes with:
-    "Cannot access 'task_id' on {{current_task}} - it's a str, not a dict"
-
-The fix: add CRITICAL OUTPUT FORMAT instructions to the load-plan prompt
-explicitly forbidding preamble and code fences.
+History:
+- v4.0.2: Bug C observed — LLMs wrap structured output in preamble + code fences.
+- v4.0.3: Workaround added — CRITICAL OUTPUT FORMAT block explicitly forbade preamble
+  and code fences in the load-plan prompt.
+- v4.0.4: Workaround removed — the upstream recipe engine bug is fixed (PR #25,
+  amplifier-module-loop-streaming, commit 54e6f4c).  The root cause was
+  _extract_text_from_content using hasattr(block, "text") which let
+  ThinkingContent blocks leak into the response string, corrupting the
+  downstream parse_json extraction.  With the fix in place the prompt no
+  longer needs to carry duct tape about output format.
 
 These tests verify:
-1. The prompt contains the required anti-preamble instructions (structural).
-2. The validate-plan step catches the real-world malformed output patterns
-   that the un-fixed prompt allowed through (behavioral — simulates Bug C).
+1. The CRITICAL OUTPUT FORMAT workaround is ABSENT (regression guard — ensures
+   the duct tape stays off now that the root cause is fixed upstream).
+2. The validate-plan step catches the real-world malformed output patterns that
+   the un-fixed prompt allowed through (behavioral — simulates Bug C).
 """
 
 import json
@@ -135,18 +125,28 @@ def run_validation_with_raw_string(raw_plan_data: str) -> subprocess.CompletedPr
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Part 1: Structural tests — the prompt MUST contain the anti-preamble block.
-# These fail before the fix is applied (RED phase), pass after (GREEN phase).
+# Part 1: Regression guard — the CRITICAL OUTPUT FORMAT workaround must NOT be
+# present in the load-plan prompt.
+#
+# The workaround was added in v4.0.3 to compensate for a recipe engine bug
+# where thinking-block content leaked into parse_json input.  That bug is fixed
+# upstream (PR #25, amplifier-module-loop-streaming, commit 54e6f4c).
+# These tests guard against the workaround being re-introduced.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-class TestLoadPlanPromptContainsCriticalFormatInstructions:
-    """The load-plan prompt must include explicit anti-preamble instructions.
+class TestCriticalOutputFormatWorkaroundIsAbsent:
+    """Regression guard: the CRITICAL OUTPUT FORMAT workaround must NOT appear
+    in the load-plan prompt.
 
-    Root cause of Bug C: models naturally add conversational preamble and
-    wrap JSON in markdown code fences unless explicitly told not to.  Without
-    these instructions even Opus produces output that parse_json: true cannot
-    handle cleanly, resulting in tasks being deserialized as strings.
+    The workaround block was added in v4.0.3 (commit 60b0c07) to compensate for
+    a bug in amplifier-module-loop-streaming where thinking-block content leaked
+    into the response string via hasattr(block, 'text') type confusion between
+    content_models.ThinkingContent and message_models.ThinkingBlock.  That bug
+    is fixed upstream (PR #25, commit 54e6f4c).
+
+    Duct tape that stays becomes architecture.  These tests ensure it stays
+    removed now that the root cause is fixed.
     """
 
     def _get_load_plan_prompt(self) -> str:
@@ -157,107 +157,34 @@ class TestLoadPlanPromptContainsCriticalFormatInstructions:
         assert prompt is not None, "load-plan step has no 'prompt' field"
         return prompt
 
-    def test_prompt_contains_critical_output_format_header(self):
-        """Prompt must include the 'CRITICAL OUTPUT FORMAT' section header."""
-        prompt = self._get_load_plan_prompt()
-        assert "CRITICAL OUTPUT FORMAT" in prompt, (
-            "load-plan prompt is missing the 'CRITICAL OUTPUT FORMAT' section.  "
-            "Without it, LLMs (even Opus) add conversational preamble and code "
-            "fences that parse_json: true cannot handle.  "
-            "Add the anti-preamble block at the end of the load-plan prompt."
-        )
+    def test_prompt_does_not_contain_critical_output_format_header(self):
+        """The 'CRITICAL OUTPUT FORMAT' workaround block must be absent from the load-plan prompt.
 
-    def test_prompt_forbids_preamble(self):
-        """Prompt must explicitly forbid conversational preamble before the JSON."""
-        prompt = self._get_load_plan_prompt()
-        # Must mention preamble restriction in some form
-        has_preamble_ban = (
-            "Do NOT start with preamble" in prompt
-            or "no preamble" in prompt.lower()
-            or "without preamble" in prompt.lower()
-        )
-        assert has_preamble_ban, (
-            "load-plan prompt must explicitly forbid preamble.  "
-            "Observed Bug C: Opus responded with 'I've read the plan. "
-            "Here's the extracted structured result:' before the JSON, "
-            "which broke parse_json: true."
-        )
-
-    def test_prompt_forbids_code_fences(self):
-        """Prompt must explicitly forbid markdown code fences around the JSON."""
-        prompt = self._get_load_plan_prompt()
-        has_fence_ban = (
-            "```json" in prompt
-            or "code fences" in prompt.lower()
-            or "no ```" in prompt
-            or "markdown" in prompt.lower()
-        )
-        assert has_fence_ban, (
-            "load-plan prompt must explicitly forbid markdown code fences.  "
-            "Observed Bug C: Opus wrapped the JSON in ```json ... ``` fences, "
-            "which broke parse_json: true."
-        )
-
-    def test_prompt_requires_first_char_is_brace(self):
-        """Prompt must state the response must start with '{' (not preamble text)."""
-        prompt = self._get_load_plan_prompt()
-        has_brace_requirement = (
-            "first character" in prompt.lower() and "{" in prompt
-        ) or (
-            "must be `{`" in prompt
-            or "must be '{'" in prompt
-            or "starts with {" in prompt.lower()
-            or "start with {" in prompt.lower()
-        )
-        assert has_brace_requirement, (
-            "load-plan prompt must require the response to start with '{'.  "
-            "This makes the output constraint concrete and machine-checkable."
-        )
-
-    def test_prompt_requires_json_loads_parseable(self):
-        """Prompt must state output must be parseable by json.loads() without modification."""
-        prompt = self._get_load_plan_prompt()
-        assert "json.loads()" in prompt or "json.loads" in prompt, (
-            "load-plan prompt must state the response must be parseable by "
-            "json.loads() with no modifications.  This directly ties the "
-            "prompt requirement to the mechanism that will fail if violated."
-        )
-
-    def test_prompt_provides_error_fallback(self):
-        """Prompt must provide a fallback error JSON for when pure output isn't possible."""
-        prompt = self._get_load_plan_prompt()
-        # The fallback: {"error": "reason for failure"}
-        has_error_fallback = (
-            '"error"' in prompt and "reason for failure" in prompt
-        ) or (
-            '{"error":' in prompt
-        )
-        assert has_error_fallback, (
-            "load-plan prompt must include a fallback error JSON response.  "
-            "If the model truly cannot produce pure JSON it should signal failure "
-            "with {\"error\": \"reason for failure\"} rather than returning "
-            "unparseable mixed content."
-        )
-
-    def test_prompt_format_block_is_at_end(self):
-        """The CRITICAL OUTPUT FORMAT block must appear after the content instructions.
-
-        Placing it at the end gives it maximum recency weight — LLMs tend to
-        follow the most recent instruction most faithfully.
+        This was the duct tape added in v4.0.3 to work around thinking-block
+        leakage in the recipe engine.  With the upstream fix in place the
+        workaround is unnecessary and must stay removed.
         """
         prompt = self._get_load_plan_prompt()
-        important_idx = prompt.find("IMPORTANT: Preserve ALL spec details")
-        critical_idx = prompt.find("CRITICAL OUTPUT FORMAT")
-        assert important_idx != -1, (
-            "IMPORTANT: Preserve ALL spec details not found in prompt"
+        assert "CRITICAL OUTPUT FORMAT" not in prompt, (
+            "load-plan prompt still contains 'CRITICAL OUTPUT FORMAT' — this is the "
+            "v4.0.3 workaround that was removed in v4.0.4.  The upstream recipe "
+            "engine bug (thinking-block leakage via hasattr(block, 'text')) is fixed "
+            "(PR #25 amplifier-module-loop-streaming, commit 54e6f4c).  "
+            "Remove the full CRITICAL OUTPUT FORMAT block from the load-plan prompt."
         )
-        assert critical_idx != -1, (
-            "CRITICAL OUTPUT FORMAT section not found in prompt"
-        )
-        assert important_idx < critical_idx, (
-            "CRITICAL OUTPUT FORMAT block must come AFTER the content instructions "
-            "(after 'IMPORTANT: Preserve ALL spec details...').  "
-            "Recency matters — put the format constraint last so it's freshest."
+
+    def test_prompt_does_not_contain_preamble_ban(self):
+        """The explicit 'Do NOT start with preamble' instruction must be absent.
+
+        This line was part of the CRITICAL OUTPUT FORMAT workaround block.  With
+        the upstream fix the recipe engine correctly filters thinking blocks before
+        parse_json runs, so the symptom-level instruction is no longer needed.
+        """
+        prompt = self._get_load_plan_prompt()
+        assert "Do NOT start with preamble" not in prompt, (
+            "load-plan prompt contains 'Do NOT start with preamble' — this is part "
+            "of the v4.0.3 workaround removed in v4.0.4.  Remove the full "
+            "CRITICAL OUTPUT FORMAT block from the load-plan prompt."
         )
 
 
@@ -443,18 +370,18 @@ class TestValidatePlanCatchesBugCOutputPatterns:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Part 3: Version guard — confirms the version was bumped to 4.0.3.
+# Part 3: Version guard — confirms the version was bumped to 4.0.4.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestRecipeVersion:
-    """Recipe version must be bumped to 4.0.3 with this fix."""
+    """Recipe version must be bumped to 4.0.4 with this fix."""
 
-    def test_version_is_4_0_3(self):
-        """Recipe version must be '4.0.3' (Bug C fix bump from 4.0.2)."""
+    def test_version_is_4_0_4(self):
+        """Recipe version must be '4.0.4' (workaround removal bump from 4.0.3)."""
         recipe = load_recipe()
         version = recipe.get("version")
-        assert version == "4.0.3", (
-            f"Recipe version must be '4.0.3' after the Bug C fix, got {version!r}.  "
-            "Bump the version field from 4.0.2 to 4.0.3."
+        assert version == "4.0.4", (
+            f"Recipe version must be '4.0.4' after removing the CRITICAL OUTPUT FORMAT "
+            f"workaround, got {version!r}.  Bump the version field from 4.0.3 to 4.0.4."
         )

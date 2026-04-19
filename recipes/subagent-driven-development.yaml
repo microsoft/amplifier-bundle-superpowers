@@ -29,7 +29,7 @@
 
 name: "subagent-driven-development"
 description: "Execute implementation plan with fresh agents per task and two-stage review (spec compliance then code quality)"
-version: "4.0.3"
+version: "4.0.4"
 author: "Superpowers Bundle"
 tags: ["implementation", "subagent", "tdd", "two-stage-review", "code-quality", "foreach", "per-task-pipeline", "checkpoint", "tiered-review"]
 
@@ -82,17 +82,6 @@ stages:
           The "tasks" key MUST contain the ordered array. Order by dependencies (independent first).
 
           IMPORTANT: Preserve ALL spec details - they are critical for review.
-
-          CRITICAL OUTPUT FORMAT:
-          Your entire response MUST be valid JSON and nothing else.
-          - Do NOT start with preamble like "Here is the result:" or "I've read the plan..."
-          - Do NOT wrap the JSON in markdown code fences (no ```json, no ```)
-          - Do NOT add trailing commentary or explanation
-          - The very first character of your response must be `{` and the last must be `}`
-          - The response must be parseable by json.loads() with no modifications
-
-          If you cannot produce pure JSON for any reason, respond with the exact string:
-          {"error": "reason for failure"}
         output: "plan_data"
         parse_json: true
         timeout: 600
