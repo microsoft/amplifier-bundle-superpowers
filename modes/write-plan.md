@@ -255,3 +255,7 @@ When entering this mode, announce:
 
 **Skill connection:** If you load a workflow skill (brainstorming, writing-plans, etc.),
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
+
+---
+
+@superpowers:context/philosophy.md

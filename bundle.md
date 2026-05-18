@@ -1,7 +1,7 @@
 ---
 bundle:
   name: superpowers
-  version: 1.0.0
+  version: 1.1.0
   description: Agentic skills framework and software development methodology - TDD, subagent-driven development, systematic debugging
 
 includes:
@@ -13,8 +13,12 @@ includes:
 
 You have access to the Superpowers development methodology - a comprehensive framework for building software with AI assistance.
 
-@superpowers:context/philosophy.md
 @superpowers:context/instructions.md
+
+<!-- The deeper TDD philosophy (philosophy.md) is mode-gated and loads when any
+     workflow mode (/brainstorm, /write-plan, /execute-plan, /debug, /verify, /finish)
+     is active. Standing-order in instructions.md tells the LLM when to suggest a mode. -->
+
 
 ---
 

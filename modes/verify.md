@@ -283,3 +283,7 @@ When entering this mode, announce:
 the skill tells you WHAT to do. This mode enforces HOW. They complement each other.
 
 **Note:** The `mode` and `todo` tools are configured as `infrastructure_tools` in hooks-mode, which means they bypass the mode tool cascade entirely. This is handled by the `infrastructure_tools` config parameter (default: `["mode", "todo"]`), not by listing them in each mode's `safe_tools`.
+
+---
+
+@superpowers:context/philosophy.md
