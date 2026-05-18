@@ -1,7 +1,7 @@
 ---
 bundle:
   name: superpowers
-  version: 1.1.0
+  version: 1.1.1
   description: Agentic skills framework and software development methodology - TDD, subagent-driven development, systematic debugging
 
 includes:
