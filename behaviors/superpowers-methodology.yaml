@@ -70,7 +70,12 @@ agents:
 
 context:
   include:
-    - superpowers:context/philosophy.md
+    # Always-on standing order: tells the LLM when to suggest a workflow mode.
     - superpowers:context/instructions.md
+    # Cross-platform integration awareness (Amplifier-specific harness notes).
     - superpowers:context/using-superpowers-amplifier.md
+    # Cross-bundle modes runtime guidance.
     - modes:context/modes-instructions.md
+    # Mode-gated (loaded by each workflow mode body via @-mention when active):
+    #   - superpowers:context/philosophy.md
+    #     Loaded by: brainstorm, write-plan, execute-plan, debug, verify, finish
