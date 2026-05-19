@@ -28,6 +28,22 @@ FINISH MODE: Complete development work with structured options.
 
 **Core principle:** Verify tests → Present options → Execute choice → Clean up.
 
+## Repository conventions discovery (mandatory on mode entry)
+
+Before finalizing anything (merge, push, PR), look for these files in the target repository and apply their contents:
+
+1. `AGENTS.md` — repo root first, then walk up from the current working directory. Defines repo-specific completion gates, required smoke/integration evidence, and what "ready to merge" means in this repo.
+2. `.github/PULL_REQUEST_TEMPLATE.md` — the checklist the repo expects every PR body to honor.
+
+If either file exists:
+- Read it before presenting options to the user.
+- Treat its gates as preconditions for Options 1 (MERGE) and 2 (PR) — not optional add-ons.
+- When repo conventions conflict with your defaults, the repo wins.
+
+If neither exists, fall back to generic finish discipline (the steps below).
+
+See `foundation:docs/PER_REPO_CONVENTIONS.md` for the principle.
+
 ## The Process
 
 ### Step 1: Verify Tests
@@ -113,6 +129,9 @@ Which option?
 
 #### Option 1: MERGE
 
+**Pre-merge gate (mandatory if `AGENTS.md` is present):**
+Re-read `AGENTS.md` and confirm every gate it requires for merge (smoke test on fresh environment, live-run evidence, integration scenario, etc.) is satisfied. If any gate is unmet, surface the gap to the user and STOP until it is addressed.
+
 ```bash
 git checkout <base-branch>
 git pull
@@ -140,8 +159,22 @@ Then: Check if in worktree and clean up if applicable.
 
 #### Option 2: PR
 
+**Pre-PR template gate (mandatory if `.github/PULL_REQUEST_TEMPLATE.md` exists):**
+
+```bash
+# Read the repo's template and use it as the PR body scaffold
+test -f .github/PULL_REQUEST_TEMPLATE.md && cat .github/PULL_REQUEST_TEMPLATE.md
+```
+
+Before approving the PR creation:
+1. Read `.github/PULL_REQUEST_TEMPLATE.md` end-to-end.
+2. Build the PR body from the template — do not substitute the generic "## Summary / ## Test Plan" stub below if the repo ships its own template.
+3. For every checkbox in the template, confirm the evidence exists. If any item is not addressed, surface the unchecked items to the user and STOP until they are addressed or the user explicitly waives them.
+
 ```bash
 git push -u origin <feature-branch>
+# If a PR template exists, the body MUST be derived from it (with checklist items honored).
+# The block below is the fallback ONLY when no template is present.
 gh pr create --title "<title>" --body "$(cat <<'EOF'
 ## Summary
 - [2-3 bullets of what changed]
