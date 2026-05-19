@@ -29,6 +29,22 @@ Claiming work is complete without verification is dishonesty, not efficiency.
 
 **Violating the letter of this rule is violating the spirit of this rule.**
 
+## Repository conventions discovery (mandatory on mode entry)
+
+Before performing verification, look for these files in the target repository and apply their contents:
+
+1. `AGENTS.md` — repo root first, then walk up from the current working directory. Defines repo-specific gates, test commands, smoke/live-run requirements, and common pitfalls.
+2. `.github/PULL_REQUEST_TEMPLATE.md` — the verification checklist the repo expects you to honor.
+
+If either file exists:
+- Read it before running any verification commands.
+- Treat its gates as additive requirements on top of the Three Checks below.
+- When repo conventions conflict with your defaults, the repo wins.
+
+If neither exists, fall back to generic verification discipline (the Three Checks).
+
+See `foundation:docs/PER_REPO_CONVENTIONS.md` for the principle.
+
 ## The Iron Law
 
 ```
@@ -97,6 +113,16 @@ Check that nothing else broke:
 ```
 ✅ "Pyright: 0 errors. Ruff: 0 issues. Edge case test with empty input returns expected error."
 ❌ "I don't think anything else is affected"
+```
+
+### Check 4: Repo-Specific Gates
+
+- [ ] Repo's `AGENTS.md` gates satisfied (smoke test, live-run, integration scenario, etc. as documented).
+- [ ] If `.github/PULL_REQUEST_TEMPLATE.md` exists, every checklist item is addressed by the evidence you produced — not waved off.
+
+```
+✅ "AGENTS.md required a fresh-DTU smoke test; ran it, log linked. PR template's 4 checkboxes all backed by evidence above."
+❌ "Generic checks pass, so we're good." (without reading repo conventions)
 ```
 
 ### Regression Test Verification (Red-Green Regression Cycle)
