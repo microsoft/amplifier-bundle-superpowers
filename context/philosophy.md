@@ -75,9 +75,19 @@ Autonomous work is powerful, but human judgment is essential at key moments:
 
 Each step uses the appropriate recipe with built-in quality gates.
 
-## The Two-Stage Review Pattern
+## The Tiered Review Pattern
 
-After each task implementation, two separate review passes ensure quality:
+Review is not a fixed ritual - it's proportional to what's at stake. A one-line config tweak and a six-file architectural change do not carry the same risk, so they shouldn't cost the same review overhead. After each task implementation, the pipeline classifies the task by size (files touched) and specification weight (words in the spec), then applies the review depth that risk actually warrants:
+
+**Trivial** (1 file or fewer, spec under 50 words) - No agent review pass runs at all. The implementer's own TDD discipline - write the failing test, watch it fail, implement, verify green - is the review. Routing a one-line fix through two independent reviewers multiplies cost without multiplying insight.
+
+**Standard** (2-5 files - the shape of most real-world tasks) - A single consolidated review (superpowers:code-reviewer) checks spec compliance and code quality together in one pass:
+- Does implementation match the spec, with nothing missing and nothing extra?
+- Clean code, proper error handling, adequate test coverage?
+
+One reviewer catches what needs catching at this size. Splitting a 3-file change into two sequential review passes means re-reading the same diff twice for marginal benefit.
+
+**Complex** (more than 5 files) - The full two-stage sequence, each stage iterating until approved (up to three fix-and-recheck cycles):
 
 **Stage 1: Spec Compliance Review** (superpowers:spec-reviewer)
 - Does implementation match the spec exactly?
@@ -90,7 +100,9 @@ After each task implementation, two separate review passes ensure quality:
 - Test coverage adequate?
 - No obvious issues?
 
-Both stages must pass before moving to next task. Order matters - spec compliance first, quality second.
+Order still matters within this tier - spec compliance is verified before quality is reviewed, so a quality reviewer never spends effort polishing code that doesn't do the right thing yet.
+
+Whatever the tier, the task doesn't advance until its assigned review(s) pass. The guarantee was never "every task gets two independent reviewers" - it's "every task gets the review rigor its size and risk actually justify."
 
 ## Anti-Patterns to Avoid
 

@@ -7,6 +7,7 @@ const path = require('path');
 
 const OPCODES = { TEXT: 0x01, CLOSE: 0x08, PING: 0x09, PONG: 0x0A };
 const WS_MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const MAX_FRAME_PAYLOAD_BYTES = 10 * 1024 * 1024;
 
 function computeAcceptKey(clientKey) {
   return crypto.createHash('sha1').update(clientKey + WS_MAGIC).digest('base64');
@@ -53,8 +54,16 @@ function decodeFrame(buffer) {
     offset = 4;
   } else if (payloadLen === 127) {
     if (buffer.length < 10) return null;
-    payloadLen = Number(buffer.readBigUInt64BE(2));
+    const extendedLen = buffer.readBigUInt64BE(2);
+    if (extendedLen > BigInt(MAX_FRAME_PAYLOAD_BYTES)) {
+      throw new Error('WebSocket frame payload exceeds maximum allowed size');
+    }
+    payloadLen = Number(extendedLen);
     offset = 10;
+  }
+
+  if (payloadLen > MAX_FRAME_PAYLOAD_BYTES) {
+    throw new Error('WebSocket frame payload exceeds maximum allowed size');
   }
 
   const maskOffset = offset;
@@ -81,6 +90,18 @@ const CONTENT_DIR = path.join(SESSION_DIR, 'content');
 const STATE_DIR = path.join(SESSION_DIR, 'state');
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
+// Per-session secret key. The companion is reachable by any local browser tab
+// and, when bound to a non-loopback host, by any host that can route to it.
+// The key authenticates the real client uniformly across loopback, tunnel, and
+// remote binds. It rides the served URL as ?key= and is mirrored into a cookie
+// on first load so same-origin subresources and the WebSocket carry it for free.
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+const TOKEN = process.env.BRAINSTORM_TOKEN || generateToken();
+const COOKIE_NAME = 'brainstorm-key-' + PORT;
+
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
@@ -98,6 +119,30 @@ h1 { color: #333; } p { color: #666; }</style>
 <body><h1>Brainstorm Companion</h1>
 <p>Waiting for the agent to push a screen...</p></body></html>`;
 
+const FORBIDDEN_PAGE = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Session key required</title>
+<style>body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+h1 { color: #333; } p { color: #666; } code { background: #f0f0f0; padding: 0.1em 0.3em; border-radius: 4px; }</style>
+</head>
+<body><h1>Session key required</h1>
+<p>This page needs the full URL your coding agent gave you, including the
+<code>?key=&hellip;</code> part. Copy the complete URL and open it again.</p></body></html>`;
+
+function bootstrapPage(key) {
+  const jsonKey = JSON.stringify(String(key));
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Opening Brainstorm Companion</title></head>
+<body>
+<script>
+try { sessionStorage.setItem('brainstorm-session-key', ${jsonKey}); } catch (e) {}
+location.replace('/');
+</script>
+</body>
+</html>`;
+}
+
 const frameTemplate = fs.readFileSync(path.join(__dirname, 'frame-template.html'), 'utf-8');
 const helperScript = fs.readFileSync(path.join(__dirname, 'helper.js'), 'utf-8');
 const helperInjection = '<script>\n' + helperScript + '\n</script>';
@@ -113,22 +158,129 @@ function wrapInFrame(content) {
   return frameTemplate.replace('<!-- CONTENT -->', content);
 }
 
+// True only for a regular file (no symlinks, no hard links) whose real path
+// resolves inside CONTENT_DIR. Guards /files/* and the screen picker against
+// symlink escapes and path-traversal tricks beyond plain basename stripping.
+function isRegularFileInsideContentDir(filePath) {
+  let stat, realContentDir, realFilePath;
+  try {
+    stat = fs.lstatSync(filePath);
+    if (stat.isSymbolicLink()) return false;
+    if (!stat.isFile()) return false;
+    if (stat.nlink !== 1) return false;
+    realContentDir = fs.realpathSync(CONTENT_DIR);
+    realFilePath = fs.realpathSync(filePath);
+  } catch (e) {
+    return false;
+  }
+  return realFilePath.startsWith(realContentDir + path.sep);
+}
+
 function getNewestScreen() {
   const files = fs.readdirSync(CONTENT_DIR)
-    .filter(f => f.endsWith('.html'))
+    .filter(f => !f.startsWith('.') && f.endsWith('.html'))
     .map(f => {
       const fp = path.join(CONTENT_DIR, f);
+      if (!isRegularFileInsideContentDir(fp)) return null;
       return { path: fp, mtime: fs.statSync(fp).mtime.getTime() };
     })
+    .filter(Boolean)
     .sort((a, b) => b.mtime - a.mtime);
   return files.length > 0 ? files[0].path : null;
+}
+
+// ========== Authentication ==========
+
+function timingSafeEqualStr(a, b) {
+  const ab = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  if (ab.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
+
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    out[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+  }
+  return out;
+}
+
+// A request is authorized if it carries the session key as ?key= or as the
+// session cookie. Both are compared in constant time.
+function isAuthorized(req) {
+  const q = req.url.indexOf('?');
+  if (q >= 0) {
+    const params = new URLSearchParams(req.url.slice(q + 1));
+    if (params.has('key')) {
+      const key = params.get('key');
+      return Boolean(key && timingSafeEqualStr(key, TOKEN));
+    }
+  }
+  const cookie = parseCookies(req.headers['cookie'])[COOKIE_NAME];
+  if (cookie && timingSafeEqualStr(cookie, TOKEN)) return true;
+  return false;
+}
+
+function pathnameOf(url) {
+  const q = url.indexOf('?');
+  return q >= 0 ? url.slice(0, q) : url;
+}
+
+function queryKey(url) {
+  const q = url.indexOf('?');
+  if (q < 0) return null;
+  return new URLSearchParams(url.slice(q + 1)).get('key');
+}
+
+function securityHeaders(headers = {}) {
+  return {
+    'Referrer-Policy': 'no-referrer',
+    'Cache-Control': 'no-store',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "frame-ancestors 'none'",
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    ...headers
+  };
+}
+
+function isAllowedWebSocketOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const host = req.headers.host;
+  if (!host) return false;
+  return origin === 'http://' + host;
 }
 
 // ========== HTTP Request Handler ==========
 
 function handleRequest(req, res) {
-  touchActivity();
-  if (req.method === 'GET' && req.url === '/') {
+  if (!isAuthorized(req)) {
+    res.writeHead(403, securityHeaders({ 'Content-Type': 'text/html; charset=utf-8' }));
+    res.end(FORBIDDEN_PAGE);
+    return;
+  }
+  touchActivity(); // only authorized requests count as activity
+
+  // Mirror the key into a cookie so same-origin subresources (/files/*) and the
+  // WebSocket can authenticate without needing ?key= on every request. HttpOnly
+  // keeps it away from page scripts; the WebSocket Origin check below is what
+  // blocks cross-origin localhost injection.
+  res.setHeader('Set-Cookie',
+    COOKIE_NAME + '=' + TOKEN + '; HttpOnly; SameSite=Strict; Path=/');
+
+  const pathname = pathnameOf(req.url);
+  const keyFromQuery = queryKey(req.url);
+  if (req.method === 'GET' && pathname === '/' && keyFromQuery && timingSafeEqualStr(keyFromQuery, TOKEN)) {
+    // Bounce through a same-origin bootstrap page that stashes the key in
+    // sessionStorage, then reloads to a bare URL so it doesn't linger in the
+    // address bar, browser history, or any outbound Referer header.
+    res.writeHead(200, securityHeaders({ 'Content-Type': 'text/html; charset=utf-8' }));
+    res.end(bootstrapPage(keyFromQuery));
+  } else if (req.method === 'GET' && pathname === '/') {
     const screenFile = getNewestScreen();
     let html = screenFile
       ? (raw => isFullDocument(raw) ? raw : wrapInFrame(raw))(fs.readFileSync(screenFile, 'utf-8'))
@@ -140,22 +292,24 @@ function handleRequest(req, res) {
       html += helperInjection;
     }
 
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, securityHeaders({ 'Content-Type': 'text/html; charset=utf-8' }));
     res.end(html);
-  } else if (req.method === 'GET' && req.url.startsWith('/files/')) {
-    const fileName = req.url.slice(7);
-    const filePath = path.join(CONTENT_DIR, path.basename(fileName));
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404);
+  } else if (req.method === 'GET' && pathname.startsWith('/files/')) {
+    const fileName = path.basename(pathname.slice(7));
+    const filePath = path.join(CONTENT_DIR, fileName);
+    // Reject empty/dotfile names and anything that isn't a regular, non-symlink
+    // file resolving inside CONTENT_DIR (symlink escapes, traversal tricks).
+    if (!fileName || fileName.startsWith('.') || !isRegularFileInsideContentDir(filePath)) {
+      res.writeHead(404, securityHeaders());
       res.end('Not found');
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, securityHeaders({ 'Content-Type': contentType }));
     res.end(fs.readFileSync(filePath));
   } else {
-    res.writeHead(404);
+    res.writeHead(404, securityHeaders());
     res.end('Not found');
   }
 }
@@ -165,6 +319,8 @@ function handleRequest(req, res) {
 const clients = new Set();
 
 function handleUpgrade(req, socket) {
+  if (!isAuthorized(req) || !isAllowedWebSocketOrigin(req)) { socket.destroy(); return; }
+
   const key = req.headers['sec-websocket-key'];
   if (!key) { socket.destroy(); return; }
 
@@ -231,7 +387,7 @@ function handleMessage(text) {
   }
   touchActivity();
   console.log(JSON.stringify({ source: 'user-event', ...event }));
-  if (event.choice) {
+  if (event && event.choice) {
     const eventsFile = path.join(STATE_DIR, 'events');
     fs.appendFileSync(eventsFile, JSON.stringify(event) + '\n');
   }
@@ -246,7 +402,7 @@ function broadcast(msg) {
 
 // ========== Activity Tracking ==========
 
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours
 let lastActivity = Date.now();
 
 function touchActivity() {
@@ -267,14 +423,14 @@ function startServer() {
   // macOS fs.watch reports 'rename' for both new files and overwrites,
   // so we can't rely on eventType alone.
   const knownFiles = new Set(
-    fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
+    fs.readdirSync(CONTENT_DIR).filter(f => !f.startsWith('.') && f.endsWith('.html'))
   );
 
   const server = http.createServer(handleRequest);
   server.on('upgrade', handleUpgrade);
 
   const watcher = fs.watch(CONTENT_DIR, (eventType, filename) => {
-    if (!filename || !filename.endsWith('.html')) return;
+    if (!filename || filename.startsWith('.') || !filename.endsWith('.html')) return;
 
     if (debounceTimers.has(filename)) clearTimeout(debounceTimers.get(filename));
     debounceTimers.set(filename, setTimeout(() => {
@@ -308,6 +464,11 @@ function startServer() {
     );
     watcher.close();
     clearInterval(lifecycleCheck);
+    // Close any upgraded WebSocket sockets so server.close() can complete and
+    // the process actually exits instead of lingering on an open connection.
+    for (const socket of clients) {
+      try { socket.destroy(); } catch (e) { /* already gone */ }
+    }
     server.close(() => process.exit(0));
   }
 
@@ -316,7 +477,7 @@ function startServer() {
     try { process.kill(ownerPid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
   }
 
-  // Check every 60s: exit if owner process died or idle for 30 minutes
+  // Check every 60s: exit if owner process died or idle for the timeout window
   const lifecycleCheck = setInterval(() => {
     if (!ownerAlive()) shutdown('owner process exited');
     else if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) shutdown('idle timeout');
@@ -339,11 +500,12 @@ function startServer() {
   server.listen(PORT, HOST, () => {
     const info = JSON.stringify({
       type: 'server-started', port: Number(PORT), host: HOST,
-      url_host: URL_HOST, url: 'http://' + URL_HOST + ':' + PORT,
-      screen_dir: CONTENT_DIR, state_dir: STATE_DIR
+      url_host: URL_HOST, url: 'http://' + URL_HOST + ':' + PORT + '/?key=' + TOKEN,
+      screen_dir: CONTENT_DIR, state_dir: STATE_DIR, idle_timeout_ms: IDLE_TIMEOUT_MS
     });
     console.log(info);
-    fs.writeFileSync(path.join(STATE_DIR, 'server-info'), info + '\n');
+    // server-info embeds the session key — keep it owner-only.
+    fs.writeFileSync(path.join(STATE_DIR, 'server-info'), info + '\n', { mode: 0o600 });
   });
 }
 
@@ -351,4 +513,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { computeAcceptKey, encodeFrame, decodeFrame, OPCODES };
+module.exports = { computeAcceptKey, encodeFrame, decodeFrame, OPCODES, MAX_FRAME_PAYLOAD_BYTES };

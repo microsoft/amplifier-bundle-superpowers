@@ -510,7 +510,7 @@ amplifier run "execute superpowers:recipes/writing-plans.yaml with design_path='
 
 **File:** `superpowers:recipes/subagent-driven-development.yaml`
 
-**What it does:** The core execution engine. Dispatches a fresh implementer agent per task, runs two-stage review (spec compliance then code quality), with `foreach` loops over all tasks.
+**What it does:** The core execution engine. Dispatches a fresh implementer agent per task, then routes each task through **tiered review** based on file count and spec size: no agent review for trivial tasks (≤1 file, <50-word spec), a single combined spec+quality review for standard tasks (2-5 files), or the full two-stage sequence (spec compliance then code quality) for complex tasks (>5 files) — all via `foreach` loops over all tasks.
 
 **Stages:**
 1. **task-execution** - Loads plan, validates tasks, implements each (foreach), spec reviews each (foreach), quality reviews each (foreach), summarizes
@@ -861,9 +861,17 @@ The approval gates exist for a reason. Rubber-stamping a plan means bugs in the 
 
 *Fix:* At minimum, check that file paths look right, task sizes are reasonable, and the TDD flow is complete (test → fail → implement → pass → commit for each task).
 
-### Working with the Two-Stage Review Pattern
+### Working with the Tiered Review Pattern
 
-The two-stage review is the heart of Superpowers quality assurance:
+Review depth in the `subagent-driven-development` recipe scales with task size, not a fixed two-stage ritual for every task. Each task is classified by file count and spec word count before review runs:
+
+**Trivial** (≤1 file, <50-word spec) - No agent review pass. The implementer's own TDD cycle is the review.
+
+**Standard** (2-5 files - most real-world tasks) - A single combined review (`superpowers:code-reviewer`) covers both concerns in one pass:
+- Does the implementation match the spec, with nothing missing or extra?
+- Is it clean code, with proper error handling and adequate test coverage?
+
+**Complex** (>5 files) - The full two-stage sequence:
 
 **Stage 1: Spec Compliance** (`superpowers:spec-reviewer`)
 - Asks: "Does the implementation match the spec?"
@@ -876,7 +884,7 @@ The two-stage review is the heart of Superpowers quality assurance:
 - Does NOT check: Whether the right thing was built (that's Stage 1's job)
 - Only runs after Stage 1 approves
 
-**When reviews find issues:** The subagent-driven-development recipe includes fix-and-recheck loops. Reviewers fix issues themselves and re-review until approved. In manual mode, you'll need to address feedback and re-run the review.
+**When reviews find issues:** The subagent-driven-development recipe includes fix-and-recheck loops (up to 3 iterations per stage). Reviewers' findings go back to the implementer, who fixes and resubmits until approved. In manual mode, you'll need to address feedback and re-run the review yourself.
 
 ### When to Override TDD (and When Never To)
 
@@ -954,23 +962,34 @@ To get the most autonomous behavior (agent works for hours without intervention)
 | Subagent Dev | `load_skill(skill_name="subagent-driven-development")` |
 | Verification | `load_skill(skill_name="verification-before-completion")` |
 
-### The Two-Stage Review Flow
+### The Tiered Review Flow
 
 ```
 Implementation Complete
          |
          v
-  Spec Compliance Review  ──FAIL──> Fix, re-review
+  Classify tier (file count + spec size)
          |
-       PASS
+         +--> Trivial (<=1 file, <50 words) ──> No agent review ──> Next Task
          |
-         v
-  Code Quality Review  ──FAIL──> Fix, re-review
+         +--> Standard (2-5 files) ──> Combined spec+quality review ──FAIL──> Fix, re-review
+         |                                    |
+         |                                  PASS ──> Next Task
          |
-       PASS
-         |
-         v
-    Next Task (or Done)
+         +--> Complex (>5 files):
+                       |
+                       v
+                Spec Compliance Review  ──FAIL──> Fix, re-review
+                       |
+                     PASS
+                       |
+                       v
+                Code Quality Review  ──FAIL──> Fix, re-review
+                       |
+                     PASS
+                       |
+                       v
+                 Next Task (or Done)
 ```
 
 ### Key Principles (Cheat Sheet)
