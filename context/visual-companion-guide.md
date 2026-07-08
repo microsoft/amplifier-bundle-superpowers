@@ -68,13 +68,14 @@ The server writes startup JSON to `$STATE_DIR/server-info`. Read that file on th
 {
   "type": "server-started",
   "port": 52341,
-  "url": "http://localhost:52341",
+  "url": "http://localhost:52341/?key=9f2c...redacted...",
   "screen_dir": "/path/to/project/.superpowers/brainstorm/12345-1706000000/content",
-  "state_dir": "/path/to/project/.superpowers/brainstorm/12345-1706000000/state"
+  "state_dir": "/path/to/project/.superpowers/brainstorm/12345-1706000000/state",
+  "idle_timeout_ms": 14400000
 }
 ```
 
-Save `screen_dir` and `state_dir`. Tell the user to open the URL in their browser.
+Save `screen_dir` and `state_dir`. Tell the user to open the URL **exactly as given, including the `?key=...` query string** — this is a per-session authentication token, not decoration. The server rejects every request (HTTP and WebSocket) that doesn't present it, so a truncated or reconstructed URL will show a "Session key required" page instead of the companion. The first load bounces through a bootstrap redirect that stashes the key in the browser tab's session storage and a cookie, so subsequent reloads and navigation within that tab don't need the key in the visible URL.
 
 **Persistent sessions:** Pass `--project-dir` pointing to the project root so mockup files are saved to `.superpowers/brainstorm/` and survive server restarts. Without it, files go to `/tmp` and are cleaned up automatically. Remind the user to add `.superpowers/` to their `.gitignore` if it isn't already there — these are working files, not source artifacts.
 
@@ -91,7 +92,7 @@ Use `--url-host` to control what hostname appears in the returned URL JSON if th
 ## The Loop
 
 1. **Check server is alive, then write HTML** to a new file in `screen_dir`:
-   - Before each write, verify `$STATE_DIR/server-info` exists. If it doesn't (or `$STATE_DIR/server-stopped` exists), restart the server with `start-server.sh` before continuing. The server exits automatically after 30 minutes of inactivity.
+   - Before each write, verify `$STATE_DIR/server-info` exists. If it doesn't (or `$STATE_DIR/server-stopped` exists), restart the server with `start-server.sh` before continuing. The server exits automatically after 4 hours of inactivity.
    - Use semantic filenames: `platform.html`, `layout.html`, `color-direction.html`
    - **Never reuse filenames** — each screen gets a fresh file
    - Write files with the `write_file` tool — never use shell heredoc (it dumps noise)

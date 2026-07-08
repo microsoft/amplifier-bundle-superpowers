@@ -1,10 +1,27 @@
 (function() {
-  const WS_URL = 'ws://' + window.location.host;
   let ws = null;
   let eventQueue = [];
 
+  // The server mirrors the session key into an HttpOnly cookie on every
+  // authenticated response, so same-origin requests (including this
+  // WebSocket's handshake) normally authenticate via that cookie alone.
+  // We also thread the key explicitly from sessionStorage (stashed there by
+  // the server's bootstrap redirect) as defense in depth — e.g. if cookies
+  // are blocked, this is what still lets the WebSocket upgrade succeed.
+  function sessionKey() {
+    try {
+      return window.sessionStorage && window.sessionStorage.getItem('brainstorm-session-key');
+    } catch (e) {}
+    return null;
+  }
+
+  function websocketUrl() {
+    const key = sessionKey();
+    return 'ws://' + window.location.host + (key ? '/?key=' + encodeURIComponent(key) : '');
+  }
+
   function connect() {
-    ws = new WebSocket(WS_URL);
+    ws = new WebSocket(websocketUrl());
 
     ws.onopen = () => {
       eventQueue.forEach(e => ws.send(JSON.stringify(e)));
