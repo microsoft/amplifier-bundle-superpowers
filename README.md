@@ -81,8 +81,10 @@ Same usage as above — modes and recipes are included directly in the bundle.
      ↓
      Per Task:
      1. Implementer agent (implements + tests + commits)
-     2. Spec reviewer agent (validates against spec)
-     3. Code quality reviewer agent (ensures quality)
+     2. Tiered review, scaled to task size:
+        - Trivial (≤1 file): TDD self-review only, no agent pass
+        - Standard (2-5 files): one combined spec+quality review
+        - Complex (>5 files): spec reviewer, then code quality reviewer
      ↓
 Finished → PR or Merge
 ```
