@@ -1,0 +1,56 @@
+bundle:
+  name: superpowers-modes-behavior
+  version: 1.0.0
+  description: |
+    The six Superpowers workflow modes (/brainstorm, /write-plan, /execute-plan,
+    /debug, /verify, /finish) with everything they need to FUNCTION — the six
+    methodology agents the mode bodies delegate to, and the JIT skills library —
+    but WITHOUT the always-on standing-order context of the full methodology
+    behavior (instructions.md / using-superpowers-amplifier.md).
+
+    Who this is for: lean / token-budgeted bundles that want the workflow modes
+    available on demand. Modes are runtime overlays — their guidance is injected
+    only on ACTIVATION — so mounting them costs little at rest; the standing-order
+    context is the main always-on cost of the full methodology behavior.
+
+    Trade-off vs superpowers-methodology: without the standing order, the
+    assistant will not proactively suggest entering a workflow mode — the user
+    invokes modes explicitly (/brainstorm etc.). Everything else is identical:
+    same modes, same agents, same skills. Mode-gated context (e.g. philosophy.md,
+    @-mentioned by mode bodies) still loads on activation.
+
+    Compose superpowers-methodology instead if you want the full methodology
+    with proactive mode suggestions.
+
+# Modes machinery: hooks-mode, hooks-approval, tool-mode, modes instructions.
+includes:
+  - bundle: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=behaviors/modes.yaml
+
+# Mode hook to discover the superpowers workflow modes.
+hooks:
+  - module: hooks-mode
+    source: git+https://github.com/microsoft/amplifier-bundle-modes@main#subdirectory=modules/hooks-mode
+    config:
+      search_paths:
+        - "@superpowers:modes"
+
+# Skills library: JIT-loadable methodology knowledge (mode bodies reference it).
+tools:
+  - module: tool-skills
+    source: git+https://github.com/microsoft/amplifier-bundle-skills@main#subdirectory=modules/tool-skills
+    config:
+      skills:
+        - "git+https://github.com/microsoft/amplifier-bundle-superpowers@main#subdirectory=skills"
+        - "git+https://github.com/obra/superpowers@main#subdirectory=skills"
+
+# The mode bodies hard-require these agents (brainstorm delegates artifact
+# creation to superpowers:brainstormer, execute-plan to implementer + the two
+# reviewers, etc.), so a modes slice without them would be broken by design.
+agents:
+  include:
+    - superpowers:implementer
+    - superpowers:spec-reviewer
+    - superpowers:code-quality-reviewer
+    - superpowers:code-reviewer
+    - superpowers:brainstormer
+    - superpowers:plan-writer
