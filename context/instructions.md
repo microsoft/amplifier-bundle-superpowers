@@ -24,6 +24,10 @@ In Amplifier: Use `load_skill()` to check for relevant skills. Use `/mode` comma
 | "Skills are for complex tasks" | ALL tasks. The Rule has no complexity threshold. |
 | "I'll adapt the skill mentally" | Don't adapt. Load and follow. |
 | "Checking skills will slow things down" | Skipping skills causes rework. Checking is faster. |
+| "Let me explore the codebase first" | Skills tell you HOW to explore. Check first. |
+| "Let me gather information first" | Skills tell you HOW to gather information. |
+| "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
+| "The skill is overkill" | Simple things become complex. Use it. |
 
 # Superpowers Instructions
 
