@@ -370,18 +370,29 @@ class TestValidatePlanCatchesBugCOutputPatterns:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Part 3: Version guard — confirms the version was bumped to 4.0.4.
+# Part 3: Version guard — confirms the version was bumped for this fix.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestRecipeVersion:
-    """Recipe version must be bumped to 4.0.4 with this fix."""
+    """Recipe version must never regress below the workaround-removal bump.
 
-    def test_version_is_4_0_4(self):
-        """Recipe version must be '4.0.4' (workaround removal bump from 4.0.3)."""
+    Originally an exact `== "4.0.4"` pin, which turned every later legitimate
+    bump into a false failure (v4.0.5, the schema_version 2 dependency-manifest
+    migration, tripped it).  The guard's real intent is a FLOOR: the recipe must
+    not ship at a version older than the one that removed the CRITICAL OUTPUT
+    FORMAT workaround.
+    """
+
+    MINIMUM_VERSION = (4, 0, 4)
+
+    def test_version_is_at_least_the_workaround_removal_bump(self):
+        """Recipe version must be >= 4.0.4 (the workaround-removal bump)."""
         recipe = load_recipe()
         version = recipe.get("version")
-        assert version == "4.0.4", (
-            f"Recipe version must be '4.0.4' after removing the CRITICAL OUTPUT FORMAT "
-            f"workaround, got {version!r}.  Bump the version field from 4.0.3 to 4.0.4."
+        assert isinstance(version, str), f"Recipe must declare a string version, got {version!r}"
+        parsed = tuple(int(part) for part in version.split("."))
+        assert parsed >= self.MINIMUM_VERSION, (
+            f"Recipe version must be at least '4.0.4' — the bump that removed the "
+            f"CRITICAL OUTPUT FORMAT workaround — got {version!r}."
         )
