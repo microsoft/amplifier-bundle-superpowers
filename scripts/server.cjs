@@ -249,10 +249,13 @@ function securityHeaders(headers = {}) {
 
 function isAllowedWebSocketOrigin(req) {
   const origin = req.headers.origin;
-  if (!origin) return true;
   const host = req.headers.host;
-  if (!host) return false;
-  return origin === 'http://' + host;
+  if (typeof origin !== 'string' || typeof host !== 'string') return false;
+  try {
+    return new URL(origin).origin === new URL('http://' + host).origin;
+  } catch (e) {
+    return false;
+  }
 }
 
 // ========== HTTP Request Handler ==========
