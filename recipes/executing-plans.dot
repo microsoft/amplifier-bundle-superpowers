@@ -1,0 +1,106 @@
+// This recipe runs your implementation plan in small batches, pausing after each one so you can review and approve before continuing.
+digraph executing_plans {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Running the Plan\nExecutes your tasks in batches, pausing for your approval between each one"
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="762f8e857ea48f8c696b3c25af6f1638011767583bd03710c24e88a1a3eb24a4"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    gate_plan_review [label="Human\nApproves Plan?", shape=diamond, fillcolor="#ffe0b2", tooltip="PLAN REVIEW COMPLETE  Review the plan assessment above. If there are blocking concerns, provide clar"]
+    start -> gate_plan_review
+    subgraph cluster_plan_review {
+        label="Plan Review\n\"Is this plan solid?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_load_plan [label="Read the\nPlan File", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_critical_review [label="Check Plan\nfor Problems", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:spec-reviewer"]
+
+        gate_plan_review -> step_load_plan
+        step_load_plan -> step_critical_review
+    }
+
+    subgraph cluster_batch_execution {
+        label="Do the Work\n\"Build the next batch\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_identify_batch [label="Pick the Next\nGroup of Tasks", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_execute_tasks [label="Carry Out\nthe Tasks", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+
+        step_critical_review -> step_identify_batch
+        step_identify_batch -> step_execute_tasks
+    }
+
+    gate_batch_report [label="Human\nApproves Results?", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== BATCH EXECUTION COMPLETE - HU"]
+    step_execute_tasks -> gate_batch_report
+    subgraph cluster_batch_report {
+        label="Progress Report\n\"How did it go?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_generate_report [label="Summarize\nWhat Happened", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:code-quality-reviewer"]
+        step_check_remaining [label="Check What's\nStill Left", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        gate_batch_report -> step_generate_report
+        step_generate_report -> step_check_remaining
+    }
+
+    subgraph cluster_feedback_and_next {
+        label="Adjust & Plan Ahead\n\"What should change?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_apply_feedback [label="Apply Your\nFeedback", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_next_steps [label="Decide\nWhat's Next", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        step_check_remaining -> step_apply_feedback
+        step_apply_feedback -> step_next_steps
+    }
+
+    gate_finish [label="Human\nApproves Finish?", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== IMPLEMENTATION COMPLETE - FIN"]
+    step_next_steps -> gate_finish
+    subgraph cluster_finish {
+        label="Wrap Up\n\"Are we all done?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_verify_completion [label="Verify\nEverything's Done", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:implementer"]
+        step_present_finish_options [label="Show Your\nFinish Options", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="foundation:zen-architect"]
+
+        gate_finish -> step_verify_completion
+        step_verify_completion -> step_present_finish_options
+    }
+
+    step_present_finish_options -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}

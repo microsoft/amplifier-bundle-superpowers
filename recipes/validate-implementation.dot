@@ -1,0 +1,63 @@
+// Checks completed work against the original plan and reports what passed, what failed, and what needs attention.
+digraph validate_implementation {
+    rankdir=TB
+    fontname="Helvetica"
+    fontsize=12
+    label="Check the Work\nReads your plan, inspects each completed task, and reports what passed or needs fixing"
+    labelloc=t
+    labeljust=c
+    compound=true
+    nodesep=0.6
+    ranksep=0.7
+    bgcolor="white"
+    source_hash="cbd76ad3b6bced223be525833349ca44bf697e061a594a394039ab97a9162428"
+
+    node [fontname="Helvetica", fontsize=11, style="filled,rounded"]
+    edge [fontname="Helvetica", fontsize=9]
+
+    start [label="Start", shape=oval, fillcolor="#e0e0e0"]
+    done  [label="Done!", shape=oval, fillcolor="#e0e0e0"]
+
+    subgraph cluster_validation {
+        label="Checking the Work\n\"Does it match the plan?\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_load_plan [label="Read the Plan\n\"What was supposed\nto happen?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+        step_per_task_validation [label="Check Each Task\n\"Did it get done right?\"\n(for each)", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="per-task-validation"]
+        step_validation_summary [label="Write the Report\n\"How did everything go?\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        start -> step_load_plan
+        step_load_plan -> step_per_task_validation
+        step_per_task_validation -> step_validation_summary
+    }
+
+    gate_review [label="Human Approves?\n\"Look good to you?\"", shape=diamond, fillcolor="#ffe0b2", tooltip="====================================================================== VALIDATION COMPLETE — HUMAN R"]
+    step_validation_summary -> gate_review
+    subgraph cluster_review {
+        label="Final Report\n\"Sharing what we found\""
+        style="filled,rounded"
+        fillcolor="#f9f9f9"
+        color="#999999"
+
+        step_present_results [label="Show the Results\n\"Here's what we found\"", shape=box, fillcolor="#c8e6c9", style="filled,rounded", tooltip="superpowers:plan-writer"]
+
+        gate_review -> step_present_results
+    }
+
+    step_present_results -> done
+
+    subgraph cluster_legend {
+        label="Legend"
+        style="filled,rounded"
+        fillcolor="white"
+        color="#cccccc"
+        fontsize=10
+        node [shape=box, fontsize=9, width=1.6]
+        leg_agent [label="AI Agent Step", shape=box, fillcolor="#c8e6c9"]
+        leg_gate [label="Approval Gate", shape=diamond, fillcolor="#ffe0b2"]
+        leg_start [label="Start / End", shape=oval, fillcolor="#e0e0e0"]
+        leg_agent -> leg_gate -> leg_start [style=invis]
+    }
+}
